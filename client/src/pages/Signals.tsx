@@ -34,7 +34,7 @@ export function Signals() {
     <div className="space-y-5">
       <div className="flex items-center gap-1.5">
         <span className="eyebrow">signals</span>
-        <InfoTip text="Signals are the readings attached to a proposal: a play-money forecast market and current sentiment. Anyone can propose, and anyone can contribute anonymous sentiment through the open API. Advisory only, it never decides." />
+        <InfoTip text="Signals are the readings attached to a proposal: a play-money forecast market and current sentiment. Anyone can propose, and anyone can contribute anonymous sentiment through the open API. Advisory by default; a signal can also be set to execute its outcome automatically." />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {proposals

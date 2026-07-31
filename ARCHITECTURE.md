@@ -78,12 +78,13 @@ client, like moood) depends on. This document lists each seam.
   advisory layer** on top of governance you already run — while still letting teams author proposals
   directly. The proposal store / import adapter is the single seam to swap.
 
-### 8. Advisory boundary — unchanged, forever
+### 8. Advisory by default, binding by choice
 
-This is not a mock. **Nothing in the system executes a decision.** The market can lean strongly YES
-and the proposal still does not pass on its own — a human reads both signals and decides. Any real
-version keeps this boundary; wiring the advisory layer to auto-execute would change what the product
-*is*.
+**Advisory is the default for a signal.** The market can lean strongly YES and the proposal still
+does not pass on its own — a person reads both signals and decides. A signal can also be set to
+**binding**: an explicit, per-signal opt-in where the resolved outcome triggers a smart contract that
+executes the proposal automatically. The default never executes; binding is always a deliberate
+choice made when the signal is created, never the fallback.
 
 ## Possible future directions (speculative — not part of the POC, not a commitment)
 

@@ -4,7 +4,7 @@
  * Open sentiment protocol + play-money advisory markets. Local, in-memory,
  * non-blockchain. The API is intentionally the "protocol surface": anyone can
  * POST anonymous sentiment; the index it publishes is the oracle the markets
- * read. Nothing here executes a decision — it only advises.
+ * read. Advisory by default; a signal can opt in to binding execution.
  */
 
 import cors from "cors";
@@ -19,7 +19,14 @@ import {
   statsFor,
   verifyToken,
 } from "./sentiment.js";
-import { HORIZONS, db, getOrCreatePlayer, nextId, type Proposal } from "./store.js";
+import {
+  HORIZONS,
+  db,
+  getOrCreatePlayer,
+  marketsForProposal,
+  nextId,
+  type Proposal,
+} from "./store.js";
 import {
   groupSummary,
   leaderboard,
@@ -210,6 +217,18 @@ app.delete("/api/proposals/:id/documents/:documentId", (req, res) => {
   if (p.source.kind === "import") return bad(res, 400, "synced proposals are read-only");
   p.changes = (p.changes ?? []).filter((c) => c.documentId !== req.params.documentId);
   ok(res, proposalDetail(p));
+});
+
+// Delete a proposal (built-in only). Also removes its markets and their trades.
+app.delete("/api/proposals/:id", (req, res) => {
+  const p = db.proposals.get(req.params.id);
+  if (!p) return bad(res, 404, "unknown proposal");
+  if (p.source.kind !== "builtin") return bad(res, 400, "only built-in proposals can be deleted");
+  const marketIds = new Set(marketsForProposal(p.id).map((m) => m.id));
+  db.trades = db.trades.filter((t) => !marketIds.has(t.marketId));
+  for (const mid of marketIds) db.markets.delete(mid);
+  db.proposals.delete(p.id);
+  ok(res, { deleted: p.id });
 });
 
 // Current-sentiment pulse. Increments an AGGREGATE counter only — a single swipe

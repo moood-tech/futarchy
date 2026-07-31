@@ -167,17 +167,3 @@ export function SearchInput({
   );
 }
 
-/** The persistent, unmissable advisory disclaimer. */
-export function AdvisoryNote() {
-  return (
-    <div
-      className="flex items-center gap-2 rounded-xs px-3 py-2 text-[13px]"
-      style={{ background: "var(--color-status-info-bg)", color: "var(--color-status-info)" }}
-    >
-      <Icon name="info" size={16} />
-      <span className="font-body">
-        <strong className="font-semibold">Advisory only</strong> — this does not decide anything.
-      </span>
-    </div>
-  );
-}

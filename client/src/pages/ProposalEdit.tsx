@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, type DocChange, type GroupSummary, type ProposalDetail as Detail } from "../lib/api";
 import { Card, Eyebrow, Icon, Modal, Pill, SourceBadge } from "../components/ui";
+import { DatePicker, TimePicker } from "../components/DateTimePicker";
 import { type DiffLine, lineDiff, toHunks } from "../lib/diff";
 
 type RepoDoc = { id: string; name: string; path: string };
@@ -189,6 +190,7 @@ function DocDiff({ change }: { change: DocChange }) {
 export function ProposalEdit() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [proposal, setProposal] = useState<Detail | null>(null);
   const [title, setTitle] = useState("");
   const [rationale, setRationale] = useState("");
@@ -199,6 +201,7 @@ export function ProposalEdit() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [tab, setTab] = useState<"details" | "documents">("details");
   const [addModal, setAddModal] = useState(false);
+  const [delModal, setDelModal] = useState(false);
   const [allGroups, setAllGroups] = useState<GroupSummary[]>([]);
 
   const load = useCallback(() => {
@@ -279,6 +282,18 @@ export function ProposalEdit() {
     applyLoaded(proposal);
   }
 
+  async function del() {
+    if (!id) return;
+    setBusy(true);
+    try {
+      await api.deleteProposal(id);
+      navigate("/proposals");
+    } finally {
+      setBusy(false);
+      setDelModal(false);
+    }
+  }
+
   async function addDoc(documentId: string) {
     if (!id || !documentId) return;
     setBusy(true);
@@ -333,6 +348,7 @@ export function ProposalEdit() {
   if (!proposal) return <div className="text-muted">Loading…</div>;
 
   const readOnly = proposal.source.kind === "import";
+  const isNew = searchParams.get("new") !== null;
   const orgGroups = allGroups.filter((g) => g.documents.length);
   const repo = allGroups.find((g) => g.id === proposal.groupId);
   const repoDocs = (repo?.documents ?? []).filter((d) => !changes.some((c) => c.documentId === d.id));
@@ -375,7 +391,7 @@ export function ProposalEdit() {
             {proposal.status}
           </Pill>
           <SourceBadge source={proposal.source} />
-          {!readOnly && changes.length === 0 && orgGroups.length > 0 ? (
+          {isNew && !readOnly && changes.length === 0 && orgGroups.length > 0 ? (
             <select
               value={proposal.groupId}
               onChange={(e) => changeGroup(e.target.value)}
@@ -390,7 +406,7 @@ export function ProposalEdit() {
               ))}
             </select>
           ) : (
-            <Pill tone="grey">{repo?.name ?? "—"}</Pill>
+            <Pill tone="purple">{repo?.name ?? "—"}</Pill>
           )}
           {changes.length > 0 && (
             <span className="font-mono text-[11px]">
@@ -451,29 +467,34 @@ export function ProposalEdit() {
               <div>
                 <Eyebrow>signal window</Eyebrow>
                 <div className="mt-1 space-y-2">
-                  <label className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <span className="font-mono text-[11px] text-muted w-12 shrink-0">starts</span>
-                    <input
-                      type="datetime-local"
-                      value={start}
-                      onChange={(e) => setStart(e.target.value)}
-                      readOnly={readOnly}
-                      className="flex-1 min-w-0 rounded-xs px-3 h-11 font-body text-[14px]"
-                      style={roStyle}
+                    <DatePicker
+                      value={fromLocalInput(start)}
+                      onChange={(ms) => setStart(toLocalInput(ms))}
+                      disabled={readOnly}
                     />
-                  </label>
-                  <label className="flex items-center gap-3">
+                    <TimePicker
+                      value={fromLocalInput(start)}
+                      onChange={(ms) => setStart(toLocalInput(ms))}
+                      disabled={readOnly}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
                     <span className="font-mono text-[11px] text-muted w-12 shrink-0">ends</span>
-                    <input
-                      type="datetime-local"
-                      value={end}
-                      min={start}
-                      onChange={(e) => setEnd(e.target.value)}
-                      readOnly={readOnly}
-                      className="flex-1 min-w-0 rounded-xs px-3 h-11 font-body text-[14px]"
-                      style={roStyle}
+                    <DatePicker
+                      value={fromLocalInput(end)}
+                      min={fromLocalInput(start)}
+                      onChange={(ms) => setEnd(toLocalInput(ms))}
+                      disabled={readOnly}
                     />
-                  </label>
+                    <TimePicker
+                      value={fromLocalInput(end)}
+                      min={fromLocalInput(start)}
+                      onChange={(ms) => setEnd(toLocalInput(ms))}
+                      disabled={readOnly}
+                    />
+                  </div>
                 </div>
                 <p className="mt-1.5 font-mono text-[10px] text-quiet">
                   // {durationLabel} · closes {closesLabel} · dispatched to moood as a pulse on a linked org
@@ -525,6 +546,16 @@ export function ProposalEdit() {
               <button className="btn btn-secondary btn-sm" disabled={!dirty} onClick={revert}>
                 Revert
               </button>
+              {proposal.source.kind === "builtin" && (
+                <button
+                  className="btn btn-ghost btn-sm ml-auto"
+                  style={{ color: "var(--color-status-error)" }}
+                  disabled={busy}
+                  onClick={() => setDelModal(true)}
+                >
+                  <Icon name="delete" size={16} /> Delete
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -577,6 +608,28 @@ export function ProposalEdit() {
             )}
           </div>
           <p className="font-mono text-[10px] text-quiet">// pick a file to add it to the proposal</p>
+        </div>
+      </Modal>
+
+      <Modal open={delModal} onClose={() => setDelModal(false)} title="delete proposal">
+        <div className="space-y-4">
+          <p className="text-[14px] text-muted">
+            Delete <span className="text-ink font-semibold">{title}</span>? This removes the proposal
+            and its signal for good. This cannot be undone.
+          </p>
+          <div className="flex items-center justify-end gap-2">
+            <button className="btn btn-secondary btn-sm" onClick={() => setDelModal(false)}>
+              Cancel
+            </button>
+            <button
+              className="btn btn-sm"
+              style={{ background: "var(--color-status-error)", color: "#fff" }}
+              disabled={busy}
+              onClick={del}
+            >
+              <Icon name="delete" size={16} /> Delete
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

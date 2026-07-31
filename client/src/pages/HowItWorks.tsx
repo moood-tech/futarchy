@@ -53,8 +53,8 @@ export function HowItWorks() {
         <div className="space-y-6">
           <p className="text-muted">
             An open protocol publishes a group's anonymous wellbeing index. A proposal is a change to
-            that group's governing documents. Two independent signals inform whoever decides, and the
-            tool never decides for them.
+            that group's governing documents. Two independent signals inform the decision. By default a
+            person decides; a signal can also be set to execute its outcome automatically.
           </p>
           <div className="space-y-6">
             <Step n="1" title="Anonymous sentiment feeds an index">
@@ -65,8 +65,10 @@ export function HowItWorks() {
               A play-money <B>forecast market</B> predicts whether the index improves under a proposal,
               and a live <B>sentiment</B> pulse shows how the group feels now.
             </Step>
-            <Step n="3" title="The tool advises, it never decides">
-              Nothing executes. A human reads both signals and decides.
+            <Step n="3" title="Advisory by default, binding by choice">
+              By default nothing executes: a person reads both signals and decides. A signal can also
+              be set to binding, so the outcome triggers a smart contract that executes it
+              automatically.
             </Step>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -82,8 +84,8 @@ export function HowItWorks() {
             </Card>
             <Card className="p-4">
               <Icon name="balance" className="text-muted" />
-              <h4 className="mt-2 font-heading text-[15px] font-semibold">Advisory</h4>
-              <p className="mt-1 text-[13px] text-muted">No executive power.</p>
+              <h4 className="mt-2 font-heading text-[15px] font-semibold">Advisory or binding</h4>
+              <p className="mt-1 text-[13px] text-muted">Advises by default, or executes the outcome.</p>
             </Card>
           </div>
         </div>
@@ -110,6 +112,10 @@ export function HowItWorks() {
           <Step n="4" title="Resolution and disputes (planned)">
             After close, the outcome resolves and forecast stakes settle. Disputes hold funds in escrow
             while arbitrators decide edge cases, for example an org that ends before a long horizon.
+          </Step>
+          <Step n="5" title="Advisory, or binding (optional)">
+            A signal is advisory by default. It can also be set to binding, so when it closes the
+            outcome triggers a smart contract that executes the proposal automatically.
           </Step>
 
           <div className="rounded-lg p-5" style={{ background: "var(--color-surface-cream)" }}>
@@ -297,19 +303,31 @@ a cut of the pot funds the GovFi treasury.`}</Code>
       {tab === "API" && (
         <div className="space-y-5">
           <p className="text-muted">
-            Partners register to get a gateway, then their apps submit responses on behalf of their
-            users. Each response is a single anonymous submission, and a one-time blind token strips
-            identity before it is recorded.
+            Partners submit responses on behalf of their users through a gateway. Each response is a
+            single anonymous submission, and a one-time blind token strips identity before it is
+            recorded. Pre-production is self-service; production access is granted on request.
           </p>
 
           <div>
-            <Eyebrow>register as a partner</Eyebrow>
-            <Code>{`POST /api/partners
+            <Eyebrow>register as a partner · pre-prod</Eyebrow>
+            <p className="mb-2 text-[13px] text-muted">
+              Self-service registration is for the pre-production environment only, for testing against
+              pre-prod data. It issues a pre-prod gateway.
+            </p>
+            <Code>{`POST /api/partners   // pre-production only
 
 { "name": "Acme app", "contact": "dev@acme.io" }
 
 200 OK
-{ "gatewayId": "gw_…", "gatewaySecret": "gs_…" }`}</Code>
+{ "gatewayId": "gw_…", "gatewaySecret": "gs_…", "env": "preprod" }`}</Code>
+          </div>
+
+          <div className="rounded-lg p-4" style={{ background: "var(--color-surface-cream)" }}>
+            <Eyebrow>production access</Eyebrow>
+            <p className="mt-2 text-[13px] text-ink-2">
+              Production is not self-service. Submit a request to support@moood.tech to be approved as a
+              partner.
+            </p>
           </div>
 
           <div>

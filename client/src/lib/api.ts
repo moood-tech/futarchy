@@ -166,6 +166,8 @@ export const api = {
     req<ProposalDetail>(`/api/proposals/${id}/documents/${documentId}`, {
       method: "DELETE",
     }),
+  deleteProposal: (id: string) =>
+    req<{ deleted: string }>(`/api/proposals/${id}`, { method: "DELETE" }),
   pulse: (id: string, direction: "positive" | "negative") =>
     req<{ pulse: { positive: number; negative: number } }>(
       `/api/proposals/${id}/pulse`,

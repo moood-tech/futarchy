@@ -15,8 +15,9 @@ decision-maker looks at a proposal through **two independent signals side by sid
    is real — a losing bet loses it to the winning side. That downside is what keeps the price honest.
 2. **Current sentiment** — the group's live, aggregate positive/negative feeling about the proposal.
 
-**The tool only advises. It never executes anything.** No proposal passes because a market leans
-yes — a human reads both signals and decides.
+**Advisory by default: a person reads both signals and decides.** No proposal passes just because a
+market leans yes. A signal can also be set to **binding**, so its outcome triggers a smart contract
+that executes the proposal automatically.
 
 The built-in client stands in as the "first reference client" — this is where **moood** would plug in.
 
@@ -122,7 +123,7 @@ real version can slot into — **not** a production system.
   a losing stake is lost to the winning side).
 - The **anonymity property**: verified is a real 30%-of-respondents subset, computed without ever
   storing who contributed.
-- The **advisory boundary**: nothing here executes a decision.
+- The **advisory boundary**: advisory by default; execution is opt-in per signal (binding mode).
 
 **Explicitly out of scope:** blockchain, smart contracts, wallets, tokens, real money, real
 long-horizon resolution, authentication, multi-tenant accounts, production security hardening.
