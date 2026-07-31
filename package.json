@@ -1,0 +1,20 @@
+{
+  "name": "advisory-governance-poc",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Advisory Governance Module POC — open sentiment protocol + futarchy-style advisory markets. Local, mock-data, non-blockchain.",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c blue,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm --workspace server run dev",
+    "dev:client": "npm --workspace client run dev",
+    "build": "npm --workspace client run build",
+    "typecheck": "npm --workspace server run typecheck && npm --workspace client run typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
