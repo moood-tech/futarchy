@@ -18,6 +18,8 @@ export interface GroupSummary {
   totalResponses: number;
   verifiedResponses: number;
   verifiedShare: number;
+  tvl: number;
+  tvlYoY: number;
 }
 
 export interface IndexPoint {

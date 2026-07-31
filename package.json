@@ -12,7 +12,11 @@
     "dev:server": "npm --workspace server run dev",
     "dev:client": "npm --workspace client run dev",
     "build": "npm --workspace client run build",
+    "start": "npm --workspace server run start",
     "typecheck": "npm --workspace server run typecheck && npm --workspace client run typecheck"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

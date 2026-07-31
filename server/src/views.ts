@@ -108,6 +108,21 @@ export function groupSummary(groupId: string) {
 
   const stats = statsFor(groupId);
 
+  // TVL: play-money staked across this group's signal markets.
+  const proposalIds = new Set(
+    [...db.proposals.values()].filter((p) => p.groupId === groupId).map((p) => p.id),
+  );
+  const marketIds = new Set(
+    [...db.markets.values()].filter((m) => proposalIds.has(m.proposalId)).map((m) => m.id),
+  );
+  const tvl = db.trades
+    .filter((t) => marketIds.has(t.marketId))
+    .reduce((sum, t) => sum + Math.max(0, t.cost), 0);
+  // Year-on-year change is illustrative: no historical TVL is stored yet, so it
+  // is derived deterministically from the group and stays stable across requests.
+  const seed = [...groupId].reduce((a, c) => a + c.charCodeAt(0), 0);
+  const tvlYoY = (seed % 80) - 22; // roughly -22% … +57%
+
   return {
     id: group.id,
     name: group.name,
@@ -122,6 +137,8 @@ export function groupSummary(groupId: string) {
     totalResponses: stats.allCount,
     verifiedResponses: stats.verCount,
     verifiedShare: Math.round(stats.verifiedShare * 100) / 100,
+    tvl: Math.round(tvl),
+    tvlYoY,
   };
 }
 

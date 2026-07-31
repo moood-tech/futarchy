@@ -14,8 +14,9 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-paper">
       <header className="border-b" style={{ borderColor: "var(--color-border-hairline)" }}>
-        <div className="mx-auto max-w-content px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="px-8 h-16 grid grid-cols-[1fr_auto_1fr] items-center">
+          {/* Left — logo */}
+          <div className="flex items-center gap-3 justify-self-start">
             <span
               className="text-[28px] leading-none lowercase text-ink"
               style={{ fontFamily: "'Magical Night', Geist, sans-serif" }}
@@ -24,7 +25,9 @@ export function Shell({ children }: { children: ReactNode }) {
             </span>
             <span className="eyebrow hidden md:block">govfi</span>
           </div>
-          <nav className="flex items-center gap-1">
+
+          {/* Center — page links */}
+          <nav className="flex items-center gap-1 justify-self-center">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
@@ -41,7 +44,10 @@ export function Shell({ children }: { children: ReactNode }) {
                 <span className="hidden sm:inline">{n.label}</span>
               </NavLink>
             ))}
-            <span className="mx-1 h-5 w-px" style={{ background: "var(--color-border-hairline)" }} />
+          </nav>
+
+          {/* Right — account */}
+          <div className="justify-self-end">
             <NavLink
               to="/portfolio"
               className={({ isActive }) =>
@@ -54,7 +60,7 @@ export function Shell({ children }: { children: ReactNode }) {
               <Icon name="account_circle" size={18} />
               <span className="hidden sm:inline">My Account</span>
             </NavLink>
-          </nav>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-content px-6 py-8">{children}</main>

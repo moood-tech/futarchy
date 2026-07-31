@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { Card, Eyebrow, Icon } from "../components/ui";
+import { cx } from "../lib/util";
 
 const TABS = ["Overview", "Signals", "Markets", "Proposals", "Identity", "API"] as const;
 type Tab = (typeof TABS)[number];
@@ -40,35 +41,49 @@ export function HowItWorks() {
   const [tab, setTab] = useState<Tab>("Overview");
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div className="segmented flex-wrap">
-        {TABS.map((t) => (
-          <button key={t} className="seg" data-active={tab === t} onClick={() => setTab(t)}>
-            {t}
-          </button>
-        ))}
-      </div>
+    <div className="mx-[calc(50%-50vw)] px-8">
+      <div className="grid gap-8 lg:grid-cols-[190px_minmax(0,1fr)] items-start">
+        {/* Left menu */}
+        <aside>
+          <Eyebrow>how it works</Eyebrow>
+          <nav className="mt-3 space-y-0.5">
+            {TABS.map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={cx(
+                  "w-full text-left rounded-xs px-3 h-9 font-body text-[14px] transition-colors",
+                  tab === t ? "bg-ink text-white" : "text-ink hover:bg-cream",
+                )}
+              >
+                {t}
+              </button>
+            ))}
+          </nav>
+        </aside>
 
-      {tab === "Overview" && (
+        {/* Content */}
+        <div className="space-y-6">
+          {tab === "Overview" && (
         <div className="space-y-6">
           <p className="text-muted">
-            An open protocol publishes a group's anonymous wellbeing index. A proposal is a change to
-            that group's governing documents. Two independent signals inform the decision. By default a
-            person decides; a signal can also be set to execute its outcome automatically.
+            moood GovFi is a portal for managing and overseeing a group's decisions: raising proposals,
+            assessing them through signals, and tracking their financial and sentiment impact over
+            time.
           </p>
           <div className="space-y-6">
             <Step n="1" title="Anonymous sentiment feeds an index">
               Any client sends anonymous sentiment for a group. It is folded into an aggregate wellbeing
-              index and discarded. Nothing is stored against a person.
+              index and discarded.
             </Step>
             <Step n="2" title="Two signals per decision">
               A play-money <B>forecast market</B> predicts whether the index improves under a proposal,
-              and a live <B>sentiment</B> pulse shows how the group feels now.
+              and a <B>sentiment</B> feed shows how the group feels about it.
             </Step>
             <Step n="3" title="Advisory by default, binding by choice">
               By default nothing executes: a person reads both signals and decides. A signal can also
-              be set to binding, so the outcome triggers a smart contract that executes it
-              automatically.
+              be bound to a smart contract, configured to execute automatically on the sentiment
+              result, the market outcome, or both.
             </Step>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -422,6 +437,8 @@ Authorization: Gateway gw_…:gs_…
           <code className="font-mono">ARCHITECTURE.md</code> and{" "}
           <code className="font-mono">PRIVACY.md</code>.
         </p>
+      </div>
+        </div>
       </div>
     </div>
   );

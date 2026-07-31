@@ -92,7 +92,7 @@ type Source =
 export function SourceBadge({ source }: { source: Source }) {
   if (source.kind === "builtin") {
     return (
-      <span className="pill" style={{ background: "var(--color-surface-mid)", color: "var(--color-text-strong)" }}>
+      <span className="pill" style={{ background: "var(--color-brand-blue-soft)", color: "var(--color-cyan-60)" }}>
         <Icon name="edit_note" size={13} /> built-in
       </span>
     );

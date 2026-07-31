@@ -44,9 +44,14 @@ export function hasChanges(diff: DiffLine[]): boolean {
   return diff.some((d) => d.type !== "ctx");
 }
 
+export interface DiffHunkLine extends DiffLine {
+  oldNo?: number; // 1-based line number in the base document (del + ctx)
+  newNo?: number; // 1-based line number in the proposed document (add + ctx)
+}
+
 export interface DiffHunk {
   header: string; // @@ -oldStart,oldCount +newStart,newCount @@
-  lines: DiffLine[];
+  lines: DiffHunkLine[];
 }
 
 /**
@@ -92,7 +97,7 @@ export function toHunks(diff: DiffLine[], context = 3): DiffHunk[] {
     const newCount = slice.filter((l) => l.type !== "del").length;
     hunks.push({
       header: `@@ -${firstOld},${oldCount} +${firstNew},${newCount} @@`,
-      lines: slice.map(({ type, text }) => ({ type, text })),
+      lines: slice.map(({ type, text, oldNo, newNo }) => ({ type, text, oldNo, newNo })),
     });
     i = j;
   }

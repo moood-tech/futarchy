@@ -1,0 +1,13 @@
+# Render Blueprint — single Node web service that serves the built client + API.
+# The API keeps all state in memory (seeded on boot), so it must run as one
+# persistent process, not serverless. Free plan spins down when idle.
+services:
+  - type: web
+    name: moood-govfi
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"

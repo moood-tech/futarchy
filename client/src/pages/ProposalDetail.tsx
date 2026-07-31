@@ -112,7 +112,7 @@ export function ProposalDetail() {
             <Pill tone={proposal.status === "open" ? "green" : "grey"}>{proposal.status}</Pill>
             <SourceBadge source={proposal.source} />
             {proposal.owner && (
-              <span className="font-mono text-[11px] text-quiet">owned by {proposal.owner}</span>
+              <span className="font-mono text-[11px] text-quiet">owned by: {proposal.owner}</span>
             )}
           </div>
           <h1 className="mt-2 font-heading text-[30px] font-semibold leading-tight max-w-3xl">
@@ -120,22 +120,12 @@ export function ProposalDetail() {
           </h1>
           <p className="mt-2 max-w-3xl text-muted">{proposal.description}</p>
 
-          {proposal.source.kind === "import" && (
-            <a
-              href={proposal.source.url}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="mt-3 inline-flex items-center gap-2 rounded-xs px-3 py-2 text-[13px] transition-colors hover:brightness-95"
-              style={{ background: "var(--color-emphasis-bg-light)", color: "var(--color-emphasis-text)" }}
-            >
-              <Icon name="sync" size={16} />
-              <span>
-                Synced from <strong className="font-semibold">{proposal.source.system}</strong>
-                <span className="font-mono text-[11px] opacity-70"> · {proposal.source.ref}</span>
-              </span>
-              <span className="font-mono text-[11px] font-semibold">view original →</span>
-            </a>
-          )}
+          <Link
+            to={`/proposals/${proposal.id}`}
+            className="mt-3 inline-flex items-center gap-1.5 font-mono text-[12px] text-ink hover:underline"
+          >
+            <Icon name="description" size={14} /> view proposal →
+          </Link>
         </div>
 
         <SignalQR id={proposal.id} />

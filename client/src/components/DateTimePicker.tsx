@@ -4,9 +4,10 @@ import { Icon } from "./ui";
 /**
  * moood-styled date + time fields. The date is a calendar popover (mirrors the
  * web-app: circular days, cream hover, cyan selected day, today = cream + cyan
- * dot). The time is a Material-style digital clock (hours / minutes / AM-PM
- * columns), mirroring the web-app's MUI time picker. Both are split into their
- * own fields and share one ms-epoch value.
+ * dot). The time is a Material 3 clock dial (big time + AM/PM above a round
+ * clock face with a cyan hand + selection), mirroring the web-app's MUI
+ * MobileTimePicker. Both are split into their own fields and share one
+ * ms-epoch value.
  */
 
 const MON_SHORT = [
@@ -215,60 +216,20 @@ export function DatePicker({
   );
 }
 
-// ── Time field (Material digital clock) ─────────────────────────────────────────
+// ── Time field (Material 3 clock dial) ──────────────────────────────────────────
 
-const ITEM_H = 34;
+const DIAL = 232;
+const CENTER = DIAL / 2;
+const RING = 90;
 
-function Column({
-  items,
-  selected,
-  format,
-  onSelect,
-}: {
-  items: number[];
-  selected: number;
-  format: (n: number) => string;
-  onSelect: (n: number) => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    // Centre the selected item in the column on mount.
-    const idx = items.indexOf(selected);
-    if (ref.current && idx >= 0) ref.current.scrollTop = idx * ITEM_H - ITEM_H;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return (
-    <div ref={ref} className="overflow-y-auto no-scrollbar" style={{ height: ITEM_H * 4 }}>
-      {items.map((n) => {
-        const active = n === selected;
-        return (
-          <button
-            key={n}
-            type="button"
-            onClick={() => onSelect(n)}
-            className="w-full grid place-items-center rounded-sm font-mono text-[13px] transition-colors"
-            style={{
-              height: ITEM_H,
-              background: active ? "var(--color-cta-default)" : "transparent",
-              color: active ? "#fff" : "var(--color-text-primary)",
-            }}
-            onMouseEnter={(e) => {
-              if (!active) e.currentTarget.style.background = "var(--color-surface-cream)";
-            }}
-            onMouseLeave={(e) => {
-              if (!active) e.currentTarget.style.background = "transparent";
-            }}
-          >
-            {format(n)}
-          </button>
-        );
-      })}
-    </div>
-  );
+/** Point on the dial ring for an angle measured clockwise from the top. */
+function dialPoint(deg: number) {
+  const r = (deg * Math.PI) / 180;
+  return { x: CENTER + RING * Math.sin(r), y: CENTER - RING * Math.cos(r) };
 }
 
-const HOURS12 = Array.from({ length: 12 }, (_, i) => i + 1);
-const MINUTES = Array.from({ length: 60 }, (_, i) => i);
+const HOUR_NUMS = Array.from({ length: 12 }, (_, i) => i + 1); // 1..12
+const MIN_NUMS = Array.from({ length: 12 }, (_, i) => i * 5); // 0,5,..55
 
 export function TimePicker({
   value,
@@ -284,7 +245,12 @@ export function TimePicker({
   const valid = Number.isFinite(value);
   const base = useMemo(() => (valid ? new Date(value) : new Date()), [valid, value]);
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"hour" | "minute">("hour");
   const ref = useDismiss(open, () => setOpen(false));
+
+  useEffect(() => {
+    if (open) setMode("hour");
+  }, [open]);
 
   const h24 = valid ? base.getHours() : 9;
   const minute = valid ? base.getMinutes() : 0;
@@ -300,6 +266,8 @@ export function TimePicker({
   }
 
   const label = valid ? `${pad(h12)}:${pad(minute)} ${isPm ? "PM" : "AM"}` : "Time";
+  const handPoint = mode === "hour" ? dialPoint(h12 * 30) : dialPoint(minute * 6);
+  const nums = mode === "hour" ? HOUR_NUMS : MIN_NUMS;
 
   return (
     <div ref={ref} className="relative shrink-0 w-[132px]">
@@ -316,28 +284,41 @@ export function TimePicker({
 
       {open && !disabled && (
         <div
-          className="absolute right-0 z-50 mt-1 rounded-lg p-2"
+          className="absolute right-0 z-50 mt-1 rounded-lg p-4"
           style={{
             background: "var(--color-surface)",
             border: "1px solid var(--color-border-hairline)",
             boxShadow: "0 8px 30px rgba(0,0,0,0.10)",
           }}
         >
-          <div className="flex gap-1">
-            <Column
-              items={HOURS12}
-              selected={h12}
-              format={(n) => pad(n)}
-              onSelect={(n) => emit(n, minute, isPm)}
-            />
-            <div className="grid place-items-center font-mono text-[13px] text-muted px-0.5">:</div>
-            <Column
-              items={MINUTES}
-              selected={minute}
-              format={(n) => pad(n)}
-              onSelect={(n) => emit(h12, n, isPm)}
-            />
-            <div className="flex flex-col gap-1 pl-1">
+          {/* Toolbar: big time + AM/PM */}
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex items-baseline font-heading text-[30px] font-semibold">
+              <button
+                type="button"
+                onClick={() => setMode("hour")}
+                className="px-1.5 rounded-sm transition-colors"
+                style={{
+                  color: mode === "hour" ? "var(--color-text-primary)" : "var(--color-text-muted)",
+                  background: mode === "hour" ? "var(--color-surface-mid)" : "transparent",
+                }}
+              >
+                {pad(h12)}
+              </button>
+              <span className="px-0.5 text-muted">:</span>
+              <button
+                type="button"
+                onClick={() => setMode("minute")}
+                className="px-1.5 rounded-sm transition-colors"
+                style={{
+                  color: mode === "minute" ? "var(--color-text-primary)" : "var(--color-text-muted)",
+                  background: mode === "minute" ? "var(--color-surface-mid)" : "transparent",
+                }}
+              >
+                {pad(minute)}
+              </button>
+            </div>
+            <div className="flex flex-col gap-1">
               {(["AM", "PM"] as const).map((p) => {
                 const active = (p === "PM") === isPm;
                 return (
@@ -345,7 +326,7 @@ export function TimePicker({
                     key={p}
                     type="button"
                     onClick={() => emit(h12, minute, p === "PM")}
-                    className="rounded-sm px-2 h-8 font-mono text-[12px] transition-colors"
+                    className="rounded-sm px-2 h-7 font-mono text-[12px] transition-colors"
                     style={{
                       background: active ? "var(--color-cta-default)" : "transparent",
                       color: active ? "#fff" : "var(--color-text-primary)",
@@ -356,6 +337,65 @@ export function TimePicker({
                 );
               })}
             </div>
+          </div>
+
+          {/* Clock dial */}
+          <div
+            className="relative mt-3 rounded-pill"
+            style={{ width: DIAL, height: DIAL, background: "var(--color-surface-mid)" }}
+          >
+            <svg
+              className="absolute inset-0 pointer-events-none"
+              width={DIAL}
+              height={DIAL}
+              viewBox={`0 0 ${DIAL} ${DIAL}`}
+            >
+              <line
+                x1={CENTER}
+                y1={CENTER}
+                x2={handPoint.x}
+                y2={handPoint.y}
+                stroke="var(--color-cta-default)"
+                strokeWidth={2}
+              />
+              <circle cx={CENTER} cy={CENTER} r={3} fill="var(--color-cta-default)" />
+            </svg>
+            {nums.map((n) => {
+              const deg = mode === "hour" ? n * 30 : n * 6;
+              const p = dialPoint(deg);
+              const selected = mode === "hour" ? n === h12 : n === minute;
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => {
+                    if (mode === "hour") {
+                      emit(n, minute, isPm);
+                      setMode("minute");
+                    } else {
+                      emit(h12, n, isPm);
+                    }
+                  }}
+                  className="absolute grid place-items-center rounded-pill font-mono text-[13px] -translate-x-1/2 -translate-y-1/2 transition-colors"
+                  style={{
+                    left: p.x,
+                    top: p.y,
+                    width: 34,
+                    height: 34,
+                    background: selected ? "var(--color-cta-default)" : "transparent",
+                    color: selected ? "#fff" : "var(--color-text-primary)",
+                  }}
+                >
+                  {mode === "hour" ? n : pad(n)}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex justify-end">
+            <button type="button" onClick={() => setOpen(false)} className="btn btn-secondary btn-sm">
+              Done
+            </button>
           </div>
         </div>
       )}

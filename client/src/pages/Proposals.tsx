@@ -95,10 +95,8 @@ export function Proposals() {
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         {/* Left — group list + search */}
         <aside>
-          <div className="flex items-center h-9">
-            <Eyebrow>groups</Eyebrow>
-          </div>
-          <div className="mt-4">
+          <Eyebrow>groups</Eyebrow>
+          <div className="mt-3">
             <SearchInput value={groupQuery} onChange={setGroupQuery} placeholder="Search groups" />
           </div>
           <div className="mt-3 space-y-1">
@@ -122,7 +120,7 @@ export function Proposals() {
 
         {/* Main — proposals list */}
         <div>
-          <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-1.5">
               <Eyebrow>proposals</Eyebrow>
               <InfoTip text="Built-in governance. Filter proposals by group on the left, search them, create a new one, or open a proposal to edit it with a git-style diff." />
@@ -168,7 +166,11 @@ export function Proposals() {
                   )}
                 </div>
                 <div className="shrink-0 flex items-center gap-3 pt-0.5">
-                  {groupName(p.groupId) && <Pill tone="grey">{groupName(p.groupId)}</Pill>}
+                  {groupName(p.groupId) && (
+                    <Pill tone={groupName(p.groupId) === "Public" ? "yellow" : "grey"}>
+                      {groupName(p.groupId)}
+                    </Pill>
+                  )}
                   <Icon name="chevron_right" size={18} className="text-quiet" />
                 </div>
               </Link>

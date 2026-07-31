@@ -7,6 +7,9 @@
  * read. Advisory by default; a signal can opt in to binding execution.
  */
 
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import cors from "cors";
 import express, { type Request, type Response } from "express";
 import { applyTrade, costToBuy, prices, type Side } from "./lmsr.js";
@@ -164,25 +167,31 @@ app.post("/api/proposals", (req, res) => {
 app.put("/api/proposals/:id", (req, res) => {
   const p = db.proposals.get(req.params.id);
   if (!p) return bad(res, 404, "unknown proposal");
-  if (p.source.kind === "import") {
-    return bad(res, 400, "synced proposals are read-only");
-  }
   const { title, description, changes, signalStart, signalEnd, groupId, status } = req.body ?? {};
-  if (typeof title === "string" && title.trim()) p.title = title.trim();
-  if (typeof description === "string") p.description = description.trim();
-  if (Number(signalStart) > 0) p.signalStart = Number(signalStart);
-  if (Number(signalEnd) > 0) p.signalEnd = Number(signalEnd);
-  // Changing the organization switches which repository applies, so any
-  // attached document changes are cleared.
-  if (typeof groupId === "string" && db.groups.has(groupId) && groupId !== p.groupId) {
-    p.groupId = groupId;
-    p.changes = [];
+  // A synced proposal's identity (title, description, window, group, status)
+  // belongs to the source and is read-only here; only its documents can change.
+  const isImport = p.source.kind === "import";
+  if (!isImport) {
+    if (typeof title === "string" && title.trim()) p.title = title.trim();
+    if (typeof description === "string") p.description = description.trim();
+    if (Number(signalStart) > 0) p.signalStart = Number(signalStart);
+    if (Number(signalEnd) > 0) p.signalEnd = Number(signalEnd);
+    // Changing the organization switches which repository applies, so any
+    // attached document changes are cleared.
+    if (typeof groupId === "string" && db.groups.has(groupId) && groupId !== p.groupId) {
+      p.groupId = groupId;
+      p.changes = [];
+    }
+    if (status === "draft" || status === "open" || status === "closed") p.status = status;
   }
-  if (status === "draft" || status === "open" || status === "closed") p.status = status;
-  // Update the proposed content of already-attached documents.
+  // The provided list is authoritative: drop any attached document not present
+  // (a pending removal being committed) and update the proposed content of the
+  // rest. Applies to synced proposals too — their documents are editable.
   if (Array.isArray(changes)) {
+    const keep = new Set(changes.map((ch) => ch?.documentId));
+    p.changes = (p.changes ?? []).filter((c) => keep.has(c.documentId));
     for (const ch of changes) {
-      const existing = p.changes?.find((c) => c.documentId === ch?.documentId);
+      const existing = p.changes.find((c) => c.documentId === ch?.documentId);
       if (existing && typeof ch.proposedDoc === "string") existing.proposedDoc = ch.proposedDoc;
     }
   }
@@ -193,7 +202,6 @@ app.put("/api/proposals/:id", (req, res) => {
 app.post("/api/proposals/:id/documents", (req, res) => {
   const p = db.proposals.get(req.params.id);
   if (!p) return bad(res, 404, "unknown proposal");
-  if (p.source.kind === "import") return bad(res, 400, "synced proposals are read-only");
   // Locked to the proposal's own group repository (its organizational unit).
   const group = db.groups.get(p.groupId);
   const doc = group?.documents?.find((d) => d.id === String(req.body?.documentId || ""));
@@ -306,6 +314,21 @@ app.get("/api/players/:id", (req, res) => {
 });
 
 app.get("/api/leaderboard", (_req, res) => ok(res, leaderboard()));
+
+// In production, serve the built client from the same origin (the API is on
+// /api, everything else falls back to the SPA's index.html). Skipped in dev,
+// where Vite serves the client and proxies /api here.
+const clientDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../client/dist");
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.use((req, res, next) => {
+    if (req.method === "GET" && !req.path.startsWith("/api")) {
+      res.sendFile(path.join(clientDist, "index.html"));
+    } else {
+      next();
+    }
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`[api] advisory-governance POC listening on http://localhost:${PORT}`);
