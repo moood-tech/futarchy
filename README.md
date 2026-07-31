@@ -10,9 +10,9 @@ decision-maker looks at a proposal through **two independent signals side by sid
 
 1. **Predicted wellbeing** — a futarchy-style, **play-money** prediction market (LMSR) forecasting
    whether the group's wellbeing index will be higher *under the proposal* than the status quo, across
-   **1 / 2 / 3 / 5 / 10 / 20 / 30-year** horizons. Longer horizons pay more: every stake compounds at
-   a **baseline (risk-free) rate**, and that baseline is also a floor — a losing bet is still refunded
-   with the baseline interest (you forgo the upside, you're not wiped out).
+   **1 / 2 / 3 / 5 / 10 / 20 / 30-year** horizons. Longer horizons pay more: a winning stake compounds
+   at a **baseline (risk-free) rate** over the term, the time value of capital held at risk. Your stake
+   is real — a losing bet loses it to the winning side. That downside is what keeps the price honest.
 2. **Current sentiment** — the group's live, aggregate positive/negative feeling about the proposal.
 
 **The tool only advises. It never executes anything.** No proposal passes because a market leans
@@ -118,8 +118,8 @@ real version can slot into — **not** a production system.
 - The **anonymity invariant**: no sentiment response is ever stored against an individual. See
   `PRIVACY.md`. This is a core property, not a shortcut.
 - The **LMSR** market maths (cost function, softmax pricing, deterministic) and the
-  **baseline-rate payout** model (winning shares redeem at `(1+r)^years`; a losing stake is
-  refunded at the same baseline — so longer horizons pay more and losers still keep the baseline).
+  **baseline-rate payout** model (winning shares redeem at `(1+r)^years`, so longer horizons pay more;
+  a losing stake is lost to the winning side).
 - The **anonymity property**: verified is a real 30%-of-respondents subset, computed without ever
   storing who contributed.
 - The **advisory boundary**: nothing here executes a decision.

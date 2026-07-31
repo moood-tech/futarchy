@@ -36,9 +36,9 @@ client, like moood) depends on. This document lists each seam.
 
 - **POC:** `server/src/lmsr.ts` is a pure, deterministic LMSR maker over 1/2/3/5/10/20/30-year
   horizons; balances are play-money in memory (`server/src/market.ts`). Payouts carry a **baseline
-  (risk-free) rate** compounded over the horizon: a winning share redeems at `(1+r)^years`, and a
-  losing stake is refunded at that same baseline (`BASELINE_RATE` in `store.ts`). Longer horizons
-  pay more; losing still returns the baseline.
+  (risk-free) rate** compounded over the horizon: a winning share redeems at `(1+r)^years`
+  (`BASELINE_RATE` in `store.ts`), the time value of capital held at risk for the term. Longer
+  horizons pay more; a losing stake is lost to the winning side, it is not refunded.
 - **Real:** the LMSR maths is production-grade and can run as-is, or be replaced by an on-chain
   market (e.g. a CPMM/LMSR contract) fed by the same oracle. The baseline rate maps to a real
   time-value-of-money / staking yield. The `buyShares()` / `prices()` / `costToBuy()` surface is

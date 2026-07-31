@@ -22,10 +22,10 @@ export type Horizon = "1y" | "2y" | "3y" | "5y" | "10y" | "20y" | "30y";
 export type ProposalStatus = "draft" | "open" | "closed";
 
 /**
- * Play-money baseline (risk-free) annual rate. A stake compounds at this rate
- * over its horizon, so longer horizons imply larger payouts. It is also the
- * floor: a losing stake would still return this baseline. Drives the payout
- * multiplier shown on each market.
+ * Play-money baseline (risk-free) annual rate. A winning stake compounds at this
+ * rate over its horizon, so longer horizons pay more — it is the time value of
+ * capital held at risk for the term. Drives the payout multiplier shown on each
+ * market. It is NOT a floor: a losing stake is lost to the winning side.
  */
 export const BASELINE_RATE = 0.05;
 

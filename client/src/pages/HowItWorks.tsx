@@ -97,7 +97,7 @@ export function HowItWorks() {
           <Step n="1" title="Forecast market">
             A play-money market over 1 to 30 year horizons predicts whether the wellbeing index will be
             higher under the proposal. Longer horizons pay more because a baseline rate compounds over
-            the term; a losing bet still returns that baseline.
+            the term. A losing bet loses its stake.
           </Step>
           <Step n="2" title="Current sentiment">
             A live count of how many people feel positive or negative about the proposal. It is
