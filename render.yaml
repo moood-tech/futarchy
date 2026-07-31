@@ -6,7 +6,8 @@ services:
     name: moood-govfi
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+    # --include=dev forces devDeps (vite, tsc) even if NODE_ENV=production.
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
