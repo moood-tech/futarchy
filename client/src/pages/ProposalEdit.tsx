@@ -400,6 +400,44 @@ function CommentCard({
   );
 }
 
+/** A small on/off switch used for the signal's feature toggles. */
+function Toggle({
+  label,
+  hint,
+  on,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  on: boolean;
+  disabled?: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <div className="text-[13px] font-medium text-ink">{label}</div>
+        <div className="text-[11px] text-muted">{hint}</div>
+      </div>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onChange(!on)}
+        className="relative w-10 h-6 rounded-pill shrink-0 transition-colors disabled:opacity-50"
+        style={{ background: on ? "var(--color-cta-default)" : "var(--color-surface-mid)" }}
+        aria-pressed={on}
+        aria-label={label}
+      >
+        <span
+          className="absolute top-0.5 left-0.5 w-5 h-5 rounded-pill bg-white transition-transform"
+          style={{ transform: on ? "translateX(16px)" : "translateX(0)" }}
+        />
+      </button>
+    </div>
+  );
+}
+
 export function ProposalEdit() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -410,6 +448,8 @@ export function ProposalEdit() {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [changes, setChanges] = useState<DocChange[]>([]);
+  const [tradingEnabled, setTradingEnabled] = useState(true);
+  const [naked, setNaked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [tab, setTab] = useState<"details" | "documents" | "comments">("details");
@@ -495,11 +535,15 @@ export function ProposalEdit() {
     setStart(toLocalInput(p.signalStart));
     setEnd(toLocalInput(p.signalEnd));
     setChanges(p.changes.map((c) => ({ ...c })));
+    setTradingEnabled(p.tradingEnabled);
+    setNaked(p.naked);
   }
 
   const dirty =
     !!proposal &&
-    (title !== proposal.title ||
+    (tradingEnabled !== proposal.tradingEnabled ||
+      naked !== proposal.naked ||
+      title !== proposal.title ||
       rationale !== proposal.description ||
       start !== toLocalInput(proposal.signalStart) ||
       end !== toLocalInput(proposal.signalEnd) ||
@@ -520,6 +564,8 @@ export function ProposalEdit() {
           signalStart: fromLocalInput(start),
           signalEnd: fromLocalInput(end),
           changes: changes.map((c) => ({ documentId: c.documentId, proposedDoc: c.proposedDoc })),
+          tradingEnabled,
+          naked,
         }),
       );
       setEditMode(false);
@@ -590,7 +636,7 @@ export function ProposalEdit() {
     setBusy(true);
     try {
       await api.deleteProposal(id);
-      navigate("/proposals");
+      navigate("/motions");
     } finally {
       setBusy(false);
       setDelModal(false);
@@ -636,6 +682,8 @@ export function ProposalEdit() {
           signalStart: fromLocalInput(start),
           signalEnd: fromLocalInput(end),
           changes: changes.map((c) => ({ documentId: c.documentId, proposedDoc: c.proposedDoc })),
+          tradingEnabled,
+          naked,
           status: "open",
         }),
       );
@@ -668,8 +716,8 @@ export function ProposalEdit() {
   return (
     <div className="mx-[calc(50%-50vw)] px-8 space-y-5">
       <div>
-        <Link to="/proposals" className="font-mono text-[12px] text-muted flex items-center gap-1 mb-3">
-          <Icon name="arrow_back" size={14} /> proposals
+        <Link to="/motions" className="font-mono text-[12px] text-muted flex items-center gap-1 mb-3">
+          <Icon name="arrow_back" size={14} /> motions
         </Link>
         <div className="flex items-center gap-2.5 flex-wrap">
           {editingTitle && canEditMeta ? (
@@ -729,8 +777,8 @@ export function ProposalEdit() {
                 disabled={busy}
                 className="grid place-items-center w-8 h-8 rounded-sm text-muted hover:text-ink transition-colors"
                 style={{ background: "var(--color-surface-mid)" }}
-                title="Delete proposal"
-                aria-label="Delete proposal"
+                title="Delete motion"
+                aria-label="Delete motion"
               >
                 <Icon name="delete" size={16} />
               </button>
@@ -796,9 +844,11 @@ export function ProposalEdit() {
             <button className="seg" data-active={tab === "details"} onClick={() => setTab("details")}>
               Details
             </button>
-            <button className="seg" data-active={tab === "documents"} onClick={() => setTab("documents")}>
-              Documents{changes.length ? ` (${changes.length})` : ""}
-            </button>
+            {!naked && (
+              <button className="seg" data-active={tab === "documents"} onClick={() => setTab("documents")}>
+                Documents{changes.length ? ` (${changes.length})` : ""}
+              </button>
+            )}
             <button className="seg" data-active={tab === "comments"} onClick={() => setTab("comments")}>
               Comments{comments.length ? ` (${comments.length})` : ""}
             </button>
@@ -915,6 +965,26 @@ export function ProposalEdit() {
                   // {durationLabel} · closes {closesLabel} · dispatched to moood as a pulse on a linked org
                 </p>
               </div>
+
+              <div>
+                <Eyebrow>options</Eyebrow>
+                <div className="mt-2 space-y-3">
+                  <Toggle
+                    label="Forecast market"
+                    hint="Play-money trading on this signal."
+                    on={tradingEnabled}
+                    disabled={!canEditMeta}
+                    onChange={setTradingEnabled}
+                  />
+                  <Toggle
+                    label="Motion"
+                    hint="Attach document changes. Off makes it a naked sentiment signal."
+                    on={!naked}
+                    disabled={!canEditMeta}
+                    onChange={(v) => setNaked(!v)}
+                  />
+                </div>
+              </div>
             </Card>
           )}
 
@@ -923,7 +993,7 @@ export function ProposalEdit() {
               {/* Document list */}
               <Card className="p-0 overflow-hidden divide-y divide-hairline">
                 {changes.length === 0 && (
-                  <div className="p-4 text-[13px] text-muted">No documents in this proposal yet.</div>
+                  <div className="p-4 text-[13px] text-muted">No documents in this motion yet.</div>
                 )}
                 {changes.map((c) => (
                   <div
@@ -1028,7 +1098,7 @@ export function ProposalEdit() {
           </div>
           {changes.length === 0 ? (
             <Card className="p-5 text-[13px] text-muted">
-              No document changes. This proposal is title and details only.
+              No document changes. This motion is title and details only.
             </Card>
           ) : rightTab === "diff" ? (
             changes.map((c) => (
@@ -1065,7 +1135,7 @@ export function ProposalEdit() {
             <div
               className="mt-1 flex items-center gap-2 rounded-xs px-3 h-11 font-body text-[14px]"
               style={{ background: "var(--color-surface-mid)", border: "1px solid var(--color-border-hairline)" }}
-              title="Locked to this proposal's group"
+              title="Locked to this motion's group"
             >
               <Icon name="folder" size={16} className="text-muted" />
               {repo?.name ?? "—"}
@@ -1088,10 +1158,10 @@ export function ProposalEdit() {
         </div>
       </Modal>
 
-      <Modal open={delModal} onClose={() => setDelModal(false)} title="delete proposal">
+      <Modal open={delModal} onClose={() => setDelModal(false)} title="delete motion">
         <div className="space-y-4">
           <p className="text-[14px] text-muted">
-            Delete <span className="text-ink font-semibold">{title}</span>? This removes the proposal
+            Delete <span className="text-ink font-semibold">{title}</span>? This removes the motion
             and its signal for good. This cannot be undone.
           </p>
           <div className="flex items-center justify-end gap-2">
@@ -1117,7 +1187,7 @@ export function ProposalEdit() {
             <span className="text-ink font-semibold">
               {changes.find((c) => c.documentId === removeDocId)?.documentName}
             </span>{" "}
-            from this proposal? It stays until you commit the change, and Revert restores it.
+            from this motion? It stays until you commit the change, and Revert restores it.
           </p>
           <div className="flex items-center justify-end gap-2">
             <button className="btn btn-secondary btn-sm" onClick={() => setRemoveDocId(null)}>

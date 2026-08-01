@@ -129,6 +129,18 @@ export interface Proposal {
    */
   changes?: DocChange[];
   /**
+   * Whether the forecast market is enabled. When false there is no market to
+   * trade — the signal is sentiment-only (e.g. the daily wellbeing check-in).
+   */
+  tradingEnabled: boolean;
+  /**
+   * A naked signal is standalone sentiment with no proposal behind it (no
+   * document changes, no decision). The daily wellbeing check-in is the
+   * canonical one: it baselines a group's long-term sentiment and every
+   * proposal's market is judged against that index.
+   */
+  naked: boolean;
+  /**
    * The signal's owner: the organization, or an individual with no org, that
    * owns it. Every signal has one. For an org group the owner is the group
    * itself, so this is left unset; for a public signal (the Public group) it

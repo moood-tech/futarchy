@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, type GroupSummary, type ProposalSummary } from "../lib/api";
-import { Card, Eyebrow, InfoTip, Pill, SearchInput, SourceBadge, SplitBar } from "../components/ui";
+import { Card, Eyebrow, Icon, InfoTip, Pill, SearchInput, SourceBadge, SplitBar } from "../components/ui";
 import { cx, pct } from "../lib/util";
 
 function SignalRow({ label, value, hint }: { label: string; value: number; hint: string }) {
@@ -111,7 +111,7 @@ export function Signals() {
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-1.5">
               <Eyebrow>signals</Eyebrow>
-              <InfoTip text="Signals are the readings attached to a proposal: a play-money forecast market and current sentiment. Anyone can propose, and anyone can contribute anonymous sentiment through the open API. Advisory by default; a signal can also be set to execute its outcome automatically." />
+              <InfoTip text="Signals are the readings attached to a motion: a play-money forecast market and current sentiment. Anyone can propose, and anyone can contribute anonymous sentiment through the open API. Advisory by default; a signal can also be set to execute its outcome automatically." />
             </div>
             <SearchInput value={query} onChange={setQuery} placeholder="Search" className="w-56" />
           </div>
@@ -122,8 +122,14 @@ export function Signals() {
             )}
             {list.map((p) => (
               <Link key={p.id} to={`/signals/${p.id}`} title={`description: ${p.description}`}>
-                <Card className="p-5 h-full hover:shadow-lg transition-shadow">
+                <Card
+                  className="p-5 h-full hover:shadow-lg transition-shadow"
+                  style={p.naked ? { background: "var(--color-surface-mid)" } : undefined}
+                >
                   <div className="flex flex-wrap items-center gap-2">
+                    {p.naked && (
+                      <span className="inline-flex" style={{ color: "var(--color-text-quiet)" }}><Icon name="star" size={16} className="is-filled" /></span>
+                    )}
                     <Pill tone={p.status === "open" ? "green" : "grey"}>{p.status}</Pill>
                     <SourceBadge source={p.source} />
                     {groupName(p.groupId) && (
@@ -139,7 +145,13 @@ export function Signals() {
                     {p.title}
                   </h3>
                   <div className="mt-4 grid grid-cols-2 gap-4">
-                    <SignalRow label="predicted (1y)" value={p.marketLean} hint="P(wellbeing up)" />
+                    {p.tradingEnabled ? (
+                      <SignalRow label="predicted (1y)" value={p.marketLean} hint="P(wellbeing up)" />
+                    ) : (
+                      <div className="font-mono text-[10px] text-quiet self-center">
+                        // baseline signal · no market
+                      </div>
+                    )}
                     <SignalRow
                       label="sentiment now"
                       value={p.sentimentPositive}

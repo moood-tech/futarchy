@@ -6,7 +6,7 @@ import { Icon } from "./ui";
 const NAV = [
   { to: "/", label: "Dashboard", icon: "home_max", end: true },
   { to: "/signals", label: "Signals", icon: "campaign", end: false },
-  { to: "/proposals", label: "Proposals", icon: "how_to_vote", end: false },
+  { to: "/motions", label: "Motions", icon: "how_to_vote", end: false },
   { to: "/how-it-works", label: "How it works", icon: "info", end: false },
 ];
 

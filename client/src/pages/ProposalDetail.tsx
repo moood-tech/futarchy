@@ -109,6 +109,9 @@ export function ProposalDetail() {
             <Icon name="arrow_back" size={14} /> signals
           </Link>
           <div className="flex flex-wrap items-center gap-2">
+            {proposal.naked && (
+              <span className="inline-flex" style={{ color: "var(--color-text-quiet)" }}><Icon name="star" size={16} className="is-filled" /></span>
+            )}
             <Pill tone={proposal.status === "open" ? "green" : "grey"}>{proposal.status}</Pill>
             <SourceBadge source={proposal.source} />
             {proposal.owner && (
@@ -120,20 +123,23 @@ export function ProposalDetail() {
           </h1>
           <p className="mt-2 max-w-3xl text-muted">{proposal.description}</p>
 
-          <Link
-            to={`/proposals/${proposal.id}`}
-            className="mt-3 inline-flex items-center gap-1.5 font-mono text-[12px] text-ink hover:underline"
-          >
-            <Icon name="description" size={14} /> view proposal →
-          </Link>
+          {!proposal.naked && (
+            <Link
+              to={`/motions/${proposal.id}`}
+              className="mt-3 inline-flex items-center gap-1.5 font-mono text-[12px] text-ink hover:underline"
+            >
+              <Icon name="description" size={14} /> view motion →
+            </Link>
+          )}
         </div>
 
         <SignalQR id={proposal.id} />
       </div>
 
-      {/* The two signals, side by side. */}
-      <div className="grid gap-5 lg:grid-cols-2">
+      {/* Forecast market (only when trading is enabled) + current sentiment. */}
+      <div className={proposal.tradingEnabled ? "grid gap-5 lg:grid-cols-2" : "grid gap-5"}>
         {/* LEFT — predicted wellbeing (futarchy-style play-money market) */}
+        {proposal.tradingEnabled && (
         <Card className="p-5">
           <div className="flex items-center gap-1.5">
             <Eyebrow>predicted wellbeing</Eyebrow>
@@ -141,7 +147,7 @@ export function ProposalDetail() {
           </div>
           <p className="mt-1 mb-4 text-[13px] text-muted">
             Forecasts whether the group's <strong className="text-ink font-semibold">wellbeing index</strong>{" "}
-            will be higher <em>under this proposal</em> than the status quo, at each horizon.
+            will be higher <em>under this motion</em> than the status quo, at each horizon.
           </p>
           <div className="space-y-2">
             {proposal.markets.map((m) =>
@@ -188,13 +194,14 @@ export function ProposalDetail() {
             )}
           </div>
         </Card>
+        )}
 
         {/* RIGHT — current sentiment (aggregate pulse) + sentiment feeds */}
         <div className="space-y-5">
           <Card className="p-5">
             <Eyebrow>current sentiment</Eyebrow>
             <p className="mt-1 mb-4 text-[13px] text-muted">
-              How the group feels about this proposal{" "}
+              How the group feels about this motion{" "}
               <strong className="text-ink font-semibold">right now</strong>.
             </p>
             <SentimentPulse proposal={proposal} />

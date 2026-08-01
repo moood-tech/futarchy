@@ -63,6 +63,8 @@ export function proposalSummary(p: Proposal) {
     signalEnd: p.signalEnd,
     source: p.source,
     owner: p.owner, // owning org/individual (public signals only)
+    tradingEnabled: p.tradingEnabled, // forecast market available
+    naked: p.naked, // standalone sentiment signal (no proposal)
     isDoc: changes.length > 0, // true when the proposal changes documents
     documentCount: changes.length,
     additions,

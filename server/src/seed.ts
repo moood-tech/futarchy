@@ -320,11 +320,18 @@ export function seed(): void {
     prop_cohort_pods: 21,
   };
 
-  const proposals: Array<Omit<Proposal, "createdAt" | "status" | "pulse" | "signalStart" | "signalEnd"> & {
-    ageDays: number;
-    pulse: { positive: number; negative: number };
-    seedLean: number; // target implied P(yes) at the 1y horizon after seeding
-  }> = [
+  const proposals: Array<
+    Omit<
+      Proposal,
+      "createdAt" | "status" | "pulse" | "signalStart" | "signalEnd" | "tradingEnabled" | "naked"
+    > & {
+      ageDays: number;
+      pulse: { positive: number; negative: number };
+      seedLean: number; // target implied P(yes) at the 1y horizon after seeding
+      tradingEnabled?: boolean; // default true
+      naked?: boolean; // default false
+    }
+  > = [
     {
       id: "prop_feeling",
       groupId: "grp_global",
@@ -336,8 +343,10 @@ export function seed(): void {
       },
       title: "How are you feeling?",
       description:
-        "The daily wellbeing check-in from the moood app. One signal per person per day feeds the Public wellbeing index.",
+        "The daily wellbeing check-in from the moood app. A naked signal: no trading and no motion. It baselines a group's long-term sentiment, the index that every motion's forecast market is judged against.",
       owner: "moood",
+      naked: true,
+      tradingEnabled: false,
       ageDays: 0,
       pulse: { positive: 3400, negative: 1600 },
       seedLean: 0.6,
@@ -476,6 +485,8 @@ export function seed(): void {
           ]
         : undefined;
     const createdAt = now - p.ageDays * 86_400_000;
+    const tradingEnabled = p.tradingEnabled ?? true;
+    const naked = p.naked ?? false;
     const proposal: Proposal = {
       id: p.id,
       groupId: p.groupId,
@@ -487,10 +498,15 @@ export function seed(): void {
       signalStart: createdAt,
       signalEnd: createdAt + (DURATIONS[p.id] ?? 30) * 86_400_000,
       changes,
+      tradingEnabled,
+      naked,
       owner: p.owner,
       pulse: p.pulse,
     };
     db.proposals.set(p.id, proposal);
+
+    // Sentiment-only signals (trading off, e.g. the daily check-in) have no market.
+    if (!tradingEnabled) continue;
 
     const markets = makeMarkets(p.id);
     for (const m of markets) db.markets.set(m.id, m);

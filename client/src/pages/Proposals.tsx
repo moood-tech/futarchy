@@ -86,8 +86,8 @@ export function Proposals() {
         ? selected.id
         : groups.find((g) => g.documents.length)?.id;
     if (!gid) return;
-    const created = await api.createProposal(gid, "Untitled proposal", "");
-    navigate(`/proposals/${created.id}?new=1`);
+    const created = await api.createProposal(gid, "Untitled motion", "");
+    navigate(`/motions/${created.id}?new=1`);
   }
 
   return (
@@ -122,8 +122,8 @@ export function Proposals() {
         <div>
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-1.5">
-              <Eyebrow>proposals</Eyebrow>
-              <InfoTip text="Built-in governance. Filter proposals by group on the left, search them, create a new one, or open a proposal to edit it with a git-style diff." />
+              <Eyebrow>motions</Eyebrow>
+              <InfoTip text="Built-in governance. Filter motions by group on the left, search them, create a new one, or open a motion to edit it with a git-style diff." />
             </div>
             <div className="flex items-center gap-2">
               <SearchInput value={query} onChange={setQuery} placeholder="Search" className="w-56" />
@@ -138,12 +138,12 @@ export function Proposals() {
 
           <Card className="mt-4 p-0 overflow-hidden divide-y divide-hairline">
             {list.length === 0 && (
-              <div className="p-5 text-[13px] text-muted">No proposals match.</div>
+              <div className="p-5 text-[13px] text-muted">No motions match.</div>
             )}
             {list.map((p) => (
               <Link
                 key={p.id}
-                to={`/proposals/${p.id}`}
+                to={`/motions/${p.id}`}
                 className="flex items-start gap-3 px-4 py-3 hover:bg-cream transition-colors"
               >
                 <div className="min-w-0 flex-1">

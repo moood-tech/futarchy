@@ -170,7 +170,7 @@ export function Dashboard() {
             }
           />
           <Tile
-            label="open proposals"
+            label="open motions"
             value={String(openCount)}
             sub={<Pill tone="grey">awaiting signal</Pill>}
           />
@@ -193,7 +193,7 @@ export function Dashboard() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-1.5">
                 <Eyebrow>wellbeing index</Eyebrow>
-                <InfoTip text="An anonymous score of the group's wellbeing from 0 to 100, aggregated from open sentiment contributions. Proposals are judged against it by two signals: a forecast market and current sentiment." />
+                <InfoTip text="An anonymous score of the group's wellbeing from 0 to 100, aggregated from open sentiment contributions. Motions are judged against it by two signals: a forecast market and current sentiment." />
               </div>
               <div className="flex items-center gap-3">
                 <span className="font-mono text-[11px] text-quiet">trust threshold</span>
@@ -226,8 +226,14 @@ export function Dashboard() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {proposals.slice(0, 4).map((p) => (
                 <Link key={p.id} to={`/signals/${p.id}`}>
-                  <Card className="p-4 hover:shadow-lg transition-shadow h-full">
+                  <Card
+                    className="p-4 hover:shadow-lg transition-shadow h-full"
+                    style={p.naked ? { background: "var(--color-surface-mid)" } : undefined}
+                  >
                     <div className="flex flex-wrap items-center gap-2">
+                      {p.naked && (
+                        <span className="inline-flex" style={{ color: "var(--color-text-quiet)" }}><Icon name="star" size={15} className="is-filled" /></span>
+                      )}
                       <Pill tone={p.status === "open" ? "green" : "grey"}>{p.status}</Pill>
                       <SourceBadge source={p.source} />
                       {p.owner && (
@@ -236,7 +242,8 @@ export function Dashboard() {
                     </div>
                     <h3 className="mt-2 font-heading text-[17px] font-semibold">{p.title}</h3>
                     <div className="mt-2 font-mono text-[12px] text-muted">
-                      market {pct(p.marketLean)} · sentiment {pct(p.sentimentPositive)}
+                      {p.tradingEnabled ? `market ${pct(p.marketLean)} · ` : ""}sentiment{" "}
+                      {pct(p.sentimentPositive)}
                     </div>
                   </Card>
                 </Link>

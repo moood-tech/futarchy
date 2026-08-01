@@ -66,6 +66,8 @@ export interface ProposalSummary {
   signalEnd: number;
   source: ProposalSource;
   owner?: string;
+  tradingEnabled: boolean;
+  naked: boolean;
   isDoc: boolean;
   documentCount: number;
   additions: number;
@@ -136,10 +138,10 @@ export const api = {
       { method: "POST", body: JSON.stringify({ groupId, value, verificationToken }) },
     ),
   proposals: (groupId?: string) =>
-    req<ProposalSummary[]>(`/api/proposals${groupId ? `?groupId=${groupId}` : ""}`),
-  proposal: (id: string) => req<ProposalDetail>(`/api/proposals/${id}`),
+    req<ProposalSummary[]>(`/api/motions${groupId ? `?groupId=${groupId}` : ""}`),
+  proposal: (id: string) => req<ProposalDetail>(`/api/motions/${id}`),
   createProposal: (groupId: string, title: string, description: string, documentId?: string) =>
-    req<ProposalDetail>("/api/proposals", {
+    req<ProposalDetail>("/api/motions", {
       method: "POST",
       body: JSON.stringify({ groupId, title, description, documentId }),
     }),
@@ -153,26 +155,28 @@ export const api = {
       signalStart?: number;
       signalEnd?: number;
       changes?: { documentId: string; proposedDoc: string }[];
+      tradingEnabled?: boolean;
+      naked?: boolean;
     },
   ) =>
-    req<ProposalDetail>(`/api/proposals/${id}`, {
+    req<ProposalDetail>(`/api/motions/${id}`, {
       method: "PUT",
       body: JSON.stringify(fields),
     }),
   addDocument: (id: string, documentId: string) =>
-    req<ProposalDetail>(`/api/proposals/${id}/documents`, {
+    req<ProposalDetail>(`/api/motions/${id}/documents`, {
       method: "POST",
       body: JSON.stringify({ documentId }),
     }),
   removeDocument: (id: string, documentId: string) =>
-    req<ProposalDetail>(`/api/proposals/${id}/documents/${documentId}`, {
+    req<ProposalDetail>(`/api/motions/${id}/documents/${documentId}`, {
       method: "DELETE",
     }),
   deleteProposal: (id: string) =>
-    req<{ deleted: string }>(`/api/proposals/${id}`, { method: "DELETE" }),
+    req<{ deleted: string }>(`/api/motions/${id}`, { method: "DELETE" }),
   pulse: (id: string, direction: "positive" | "negative") =>
     req<{ pulse: { positive: number; negative: number } }>(
-      `/api/proposals/${id}/pulse`,
+      `/api/motions/${id}/pulse`,
       { method: "POST", body: JSON.stringify({ direction }) },
     ),
   quote: (marketId: string, side: Side, shares: number) =>

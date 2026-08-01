@@ -103,7 +103,7 @@ app.get("/api/index/:groupId", (req, res) => {
 });
 
 // ── Proposals ─────────────────────────────────────────────────────────────────
-app.get("/api/proposals", (req, res) => {
+app.get("/api/motions", (req, res) => {
   const groupId = typeof req.query.groupId === "string" ? req.query.groupId : null;
   const list = [...db.proposals.values()]
     .filter((p) => (groupId ? p.groupId === groupId : true))
@@ -112,7 +112,7 @@ app.get("/api/proposals", (req, res) => {
   ok(res, list);
 });
 
-app.get("/api/proposals/:id", (req, res) => {
+app.get("/api/motions/:id", (req, res) => {
   const p = db.proposals.get(req.params.id);
   if (!p) return bad(res, 404, "unknown proposal");
   ok(res, proposalDetail(p));
@@ -120,7 +120,7 @@ app.get("/api/proposals/:id", (req, res) => {
 
 // Built-in governance: author a proposal here. Creates the proposal (source
 // `builtin`) plus a forecast market per horizon.
-app.post("/api/proposals", (req, res) => {
+app.post("/api/motions", (req, res) => {
   const { groupId, title, description } = req.body ?? {};
   if (typeof groupId !== "string" || !db.groups.has(groupId)) {
     return bad(res, 400, "valid groupId required");
@@ -144,6 +144,8 @@ app.post("/api/proposals", (req, res) => {
     signalStart: Number(req.body?.signalStart) || now,
     signalEnd: Number(req.body?.signalEnd) || now + 30 * 86_400_000,
     changes: [],
+    tradingEnabled: true,
+    naked: false,
     pulse: { positive: 0, negative: 0 },
   };
   db.proposals.set(id, proposal);
@@ -164,10 +166,11 @@ app.post("/api/proposals", (req, res) => {
 });
 
 // Edit a proposal's text (built-in governance).
-app.put("/api/proposals/:id", (req, res) => {
+app.put("/api/motions/:id", (req, res) => {
   const p = db.proposals.get(req.params.id);
   if (!p) return bad(res, 404, "unknown proposal");
-  const { title, description, changes, signalStart, signalEnd, groupId, status } = req.body ?? {};
+  const { title, description, changes, signalStart, signalEnd, groupId, status, tradingEnabled, naked } =
+    req.body ?? {};
   // A synced proposal's identity (title, description, window, group, status)
   // belongs to the source and is read-only here; only its documents can change.
   const isImport = p.source.kind === "import";
@@ -183,6 +186,35 @@ app.put("/api/proposals/:id", (req, res) => {
       p.changes = [];
     }
     if (status === "draft" || status === "open" || status === "closed") p.status = status;
+    // Naked = a standalone sentiment signal: no proposal, so no documents.
+    if (typeof naked === "boolean") {
+      p.naked = naked;
+      if (naked) p.changes = [];
+    }
+  }
+  // Trading toggle: create the per-horizon market when enabled, or tear it (and
+  // its trades) down when disabled. Applies to synced signals too.
+  if (typeof tradingEnabled === "boolean" && tradingEnabled !== p.tradingEnabled) {
+    p.tradingEnabled = tradingEnabled;
+    if (tradingEnabled) {
+      if (marketsForProposal(p.id).length === 0) {
+        for (const { key, years } of HORIZONS) {
+          const mid = nextId("mkt");
+          db.markets.set(mid, {
+            id: mid,
+            proposalId: p.id,
+            horizon: key,
+            years,
+            lmsr: { b: 100, qYes: 0, qNo: 0 },
+            history: [{ t: 0, yes: 0.5 }],
+          });
+        }
+      }
+    } else {
+      const ids = new Set(marketsForProposal(p.id).map((m) => m.id));
+      db.trades = db.trades.filter((t) => !ids.has(t.marketId));
+      for (const mid of ids) db.markets.delete(mid);
+    }
   }
   // The provided list is authoritative: drop any attached document not present
   // (a pending removal being committed) and update the proposed content of the
@@ -199,7 +231,7 @@ app.put("/api/proposals/:id", (req, res) => {
 });
 
 // Add a document from the group's repository to a proposal (`git add ./file`).
-app.post("/api/proposals/:id/documents", (req, res) => {
+app.post("/api/motions/:id/documents", (req, res) => {
   const p = db.proposals.get(req.params.id);
   if (!p) return bad(res, 404, "unknown proposal");
   // Locked to the proposal's own group repository (its organizational unit).
@@ -219,7 +251,7 @@ app.post("/api/proposals/:id/documents", (req, res) => {
 });
 
 // Remove a document from a proposal.
-app.delete("/api/proposals/:id/documents/:documentId", (req, res) => {
+app.delete("/api/motions/:id/documents/:documentId", (req, res) => {
   const p = db.proposals.get(req.params.id);
   if (!p) return bad(res, 404, "unknown proposal");
   if (p.source.kind === "import") return bad(res, 400, "synced proposals are read-only");
@@ -228,7 +260,7 @@ app.delete("/api/proposals/:id/documents/:documentId", (req, res) => {
 });
 
 // Delete a proposal (built-in only). Also removes its markets and their trades.
-app.delete("/api/proposals/:id", (req, res) => {
+app.delete("/api/motions/:id", (req, res) => {
   const p = db.proposals.get(req.params.id);
   if (!p) return bad(res, 404, "unknown proposal");
   if (p.source.kind !== "builtin") return bad(res, 400, "only built-in proposals can be deleted");
@@ -241,7 +273,7 @@ app.delete("/api/proposals/:id", (req, res) => {
 
 // Current-sentiment pulse. Increments an AGGREGATE counter only — a single swipe
 // left/right. No individual response is ever stored (see PRIVACY.md).
-app.post("/api/proposals/:id/pulse", (req, res) => {
+app.post("/api/motions/:id/pulse", (req, res) => {
   const p = db.proposals.get(req.params.id);
   if (!p) return bad(res, 404, "unknown proposal");
   const dir = req.body?.direction as "positive" | "negative";

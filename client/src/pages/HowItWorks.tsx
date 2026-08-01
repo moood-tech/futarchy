@@ -2,7 +2,7 @@ import { type ReactNode, useState } from "react";
 import { Card, Eyebrow, Icon } from "../components/ui";
 import { cx } from "../lib/util";
 
-const TABS = ["Overview", "Signals", "Markets", "Proposals", "Identity", "API"] as const;
+const TABS = ["Overview", "Signals", "Markets", "Motions", "Identity", "API"] as const;
 type Tab = (typeof TABS)[number];
 
 function Step({ n, title, children }: { n: string; title: string; children: ReactNode }) {
@@ -67,7 +67,7 @@ export function HowItWorks() {
           {tab === "Overview" && (
         <div className="space-y-6">
           <p className="text-muted">
-            moood GovFi is a portal for managing and overseeing a group's decisions: raising proposals,
+            moood GovFi is a portal for managing and overseeing a group's decisions: raising motions,
             assessing them through signals, and tracking their financial and sentiment impact over
             time.
           </p>
@@ -77,7 +77,7 @@ export function HowItWorks() {
               index and discarded.
             </Step>
             <Step n="2" title="Two signals per decision">
-              A play-money <B>forecast market</B> predicts whether the index improves under a proposal,
+              A play-money <B>forecast market</B> predicts whether the index improves under a motion,
               and a <B>sentiment</B> feed shows how the group feels about it.
             </Step>
             <Step n="3" title="Advisory by default, binding by choice">
@@ -113,15 +113,15 @@ export function HowItWorks() {
           </p>
           <Step n="1" title="Forecast market">
             A play-money market over 1 to 30 year horizons predicts whether the wellbeing index will be
-            higher under the proposal. Longer horizons pay more because a baseline rate compounds over
+            higher under the motion. Longer horizons pay more because a baseline rate compounds over
             the term. A losing bet loses its stake.
           </Step>
           <Step n="2" title="Current sentiment">
-            A live count of how many people feel positive or negative about the proposal. It is
+            A live count of how many people feel positive or negative about the motion. It is
             anonymous; nothing is stored about who responded.
           </Step>
           <Step n="3" title="A window that opens and closes">
-            Each signal has a start and end time. When it closes, the proposal can be approved or denied
+            Each signal has a start and end time. When it closes, the motion can be approved or denied
             on sentiment. This window maps to a moood pulse when dispatched to a linked org.
           </Step>
           <Step n="4" title="Resolution and disputes (planned)">
@@ -130,7 +130,7 @@ export function HowItWorks() {
           </Step>
           <Step n="5" title="Advisory, or binding (optional)">
             A signal is advisory by default. It can also be set to binding, so when it closes the
-            outcome triggers a smart contract that executes the proposal automatically.
+            outcome triggers a smart contract that executes the motion automatically.
           </Step>
 
           <div className="rounded-lg p-5" style={{ background: "var(--color-surface-cream)" }}>
@@ -149,17 +149,17 @@ export function HowItWorks() {
           <p className="text-muted">
             The forecast market runs on play money, but your stake is real. Back a side and you win
             from the other side, or lose your stake to it. That downside is what makes the price a
-            genuine signal, and what rewards backing proposals that actually lift sentiment.
+            genuine signal, and what rewards backing motions that actually lift sentiment.
           </p>
 
           <Step n="1" title="There is a loser, on purpose">
-            Back positive and you are betting the proposal lifts the wellbeing index. Back negative and
+            Back positive and you are betting the motion lifts the wellbeing index. Back negative and
             you are betting it will not. The correct side takes the stakes of the wrong side. Being
             wrong costs you, which is what keeps the price honest.
           </Step>
-          <Step n="2" title="The proposer funds the market">
-            Whoever raises a proposal fronts a subsidy for it. A <B>company</B> pays for a forecast on
-            its own decision, and the front is also its commitment to the proposal. Shared questions
+          <Step n="2" title="The mover funds the market">
+            Whoever raises a motion fronts a subsidy for it. A <B>company</B> pays for a forecast on
+            its own decision, and the front is also its commitment to the motion. Shared questions
             like the <B>wellbeing index</B> are funded by the GovFi treasury. That subsidy is what pays
             informed forecasters, so taking part is worthwhile.
           </Step>
@@ -170,7 +170,7 @@ export function HowItWorks() {
           </Step>
           <Step n="4" title="Winners take the pot">
             An automated market maker prices each side between 0 and 100 percent. That price is what a
-            token costs and the market's live probability that the proposal helps. At resolution the
+            token costs and the market's live probability that the motion helps. At resolution the
             correct side takes the losing side's stakes and the subsidy, split by the odds each bought
             at. The wrong side loses what it staked.
           </Step>
@@ -237,7 +237,7 @@ export function HowItWorks() {
             <div className="mt-2">
               <Code>{`10-year horizon
 
-proposer fronts          →  §2,000 subsidy (added to the pot)
+mover fronts          →  §2,000 subsidy (added to the pot)
 optimists back positive  →  §6,000 staked
 skeptics back negative   →  §4,000 staked
 escrow earns yield for the term
@@ -253,10 +253,10 @@ a cut of the pot funds the GovFi treasury.`}</Code>
         </div>
       )}
 
-      {tab === "Proposals" && (
+      {tab === "Motions" && (
         <div className="space-y-6">
           <p className="text-muted">
-            A proposal puts a change or decision to a group to assess: to determine a signal, whether
+            A motion puts a change or decision to a group to assess: to determine a signal, whether
             for or against, or whether its impact will be positive or negative. It can include edits to
             the group's documents, or it can simply be a question.
           </p>
@@ -264,7 +264,7 @@ a cut of the pot funds the GovFi treasury.`}</Code>
             A group owns a set of documents, such as a constitution, a contract, or its policies.
           </Step>
           <Step n="2" title="It can change one or several documents">
-            A proposal can edit a single document or several at once, for example a contract and a
+            A motion can edit a single document or several at once, for example a contract and a
             constitution together. Or it can be title only, a question with no document change.
           </Step>
           <Step n="3" title="Reviewed as before and after">
@@ -272,18 +272,18 @@ a cut of the pot funds the GovFi treasury.`}</Code>
             text, not a written summary.
           </Step>
           <Step n="4" title="Publishing opens a signal">
-            When a proposal is published it opens a signal, the readings the group assesses it by.
+            When a motion is published it opens a signal, the readings the group assesses it by.
           </Step>
           <Step n="5" title="Or synced from a DAO">
-            A proposal can also be synced from existing DAO governance such as Snapshot, Tally, Aragon,
+            A motion can also be synced from existing DAO governance such as Snapshot, Tally, Aragon,
             MakerDAO, or ENS. It arrives read-only, opens a signal, and links back to the source. The
-            DAO proposal's voting window becomes the signal's window.
+            DAO motion's voting window becomes the signal's window.
           </Step>
 
           <div className="rounded-lg p-5" style={{ background: "var(--color-surface-cream)" }}>
             <Eyebrow>technicals</Eyebrow>
             <ul className="mt-2 space-y-1.5 text-[13px] text-ink-2">
-              <li>Documents are versioned with git, so proposals and their changes are tracked over time.</li>
+              <li>Documents are versioned with git, so motions and their changes are tracked over time.</li>
             </ul>
           </div>
         </div>
@@ -346,8 +346,8 @@ a cut of the pot funds the GovFi treasury.`}</Code>
           </div>
 
           <div>
-            <Eyebrow>sync a dao proposal</Eyebrow>
-            <Code>{`GET /api/sync/{platform}/proposals/{proposalId}
+            <Eyebrow>sync a dao motion</Eyebrow>
+            <Code>{`GET /api/sync/{platform}/motions/{motionId}
 Authorization: Gateway gw_…:gs_…
 
 200 OK
@@ -358,7 +358,7 @@ Authorization: Gateway gw_…:gs_…
   "votingEnd": 1785970000000
 }`}</Code>
             <p className="mt-2 text-[13px] text-muted">
-              The imported proposal opens a signal, and its voting window becomes the signal window.
+              The imported motion opens a signal, and its voting window becomes the signal window.
             </p>
           </div>
 
