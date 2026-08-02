@@ -92,14 +92,19 @@ function Tile({
   label,
   value,
   sub,
+  hint,
 }: {
   label: string;
   value: string;
   sub?: ReactNode;
+  hint?: string;
 }) {
   return (
     <Card className="p-5">
-      <Eyebrow>{label}</Eyebrow>
+      <div className="flex items-center gap-1.5">
+        <Eyebrow>{label}</Eyebrow>
+        {hint && <InfoTip text={hint} />}
+      </div>
       <div className="mt-2 font-heading text-[34px] font-semibold leading-none">{value}</div>
       {sub && <div className="mt-2">{sub}</div>}
     </Card>
@@ -136,15 +141,15 @@ export function Dashboard() {
         <aside className="space-y-3">
           <div>
             <div className="flex items-center gap-1.5">
-              <Eyebrow>group overview</Eyebrow>
-              <InfoTip text="A group's wellbeing index over time, with its current index, 30-day trend, and open signals. The selector holds the organizations you belong to, plus Public for signals not owned by an organization." />
+              <Eyebrow>collective</Eyebrow>
+              {group?.description && <InfoTip text={group.description} />}
             </div>
             <GroupPicker groups={groups} groupId={groupId} onPick={setGroupId} />
-            <p className="mt-2 text-[13px] text-muted">{group?.description}</p>
           </div>
 
           <Tile
             label="current index"
+            hint="A collective's wellbeing index over time, with its current index, 30-day trend, and open signals. The selector holds the organizations you belong to, plus Public for signals not owned by an organization."
             value={
               threshold === "verified"
                 ? String(group?.currentIndexVerified ?? "—")
@@ -193,7 +198,7 @@ export function Dashboard() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-1.5">
                 <Eyebrow>wellbeing index</Eyebrow>
-                <InfoTip text="An anonymous score of the group's wellbeing from 0 to 100, aggregated from open sentiment contributions. Motions are judged against it by two signals: a forecast market and current sentiment." />
+                <InfoTip text="An anonymous score of the collective's wellbeing from 0 to 100, aggregated from open sentiment contributions. Motions are judged against it by two signals: a forecast market and current sentiment." />
               </div>
               <div className="flex items-center gap-3">
                 <span className="font-mono text-[11px] text-quiet">trust threshold</span>

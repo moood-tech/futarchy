@@ -1135,7 +1135,7 @@ export function ProposalEdit() {
             <div
               className="mt-1 flex items-center gap-2 rounded-xs px-3 h-11 font-body text-[14px]"
               style={{ background: "var(--color-surface-mid)", border: "1px solid var(--color-border-hairline)" }}
-              title="Locked to this motion's group"
+              title="Locked to this motion's collective"
             >
               <Icon name="folder" size={16} className="text-muted" />
               {repo?.name ?? "—"}

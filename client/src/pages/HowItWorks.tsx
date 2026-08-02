@@ -67,18 +67,18 @@ export function HowItWorks() {
           {tab === "Overview" && (
         <div className="space-y-6">
           <p className="text-muted">
-            moood GovFi is a portal for managing and overseeing a group's decisions: raising motions,
+            moood GovFi is a portal for managing and overseeing a collective's decisions: raising motions,
             assessing them through signals, and tracking their financial and sentiment impact over
             time.
           </p>
           <div className="space-y-6">
             <Step n="1" title="Anonymous sentiment feeds an index">
-              Any client sends anonymous sentiment for a group. It is folded into an aggregate wellbeing
+              Any client sends anonymous sentiment for a collective. It is folded into an aggregate wellbeing
               index and discarded.
             </Step>
             <Step n="2" title="Two signals per decision">
               A play-money <B>forecast market</B> predicts whether the index improves under a motion,
-              and a <B>sentiment</B> feed shows how the group feels about it.
+              and a <B>sentiment</B> feed shows how the collective feels about it.
             </Step>
             <Step n="3" title="Advisory by default, binding by choice">
               By default nothing executes: a person reads both signals and decides. A signal can also
@@ -256,12 +256,12 @@ a cut of the pot funds the GovFi treasury.`}</Code>
       {tab === "Motions" && (
         <div className="space-y-6">
           <p className="text-muted">
-            A motion puts a change or decision to a group to assess: to determine a signal, whether
+            A motion puts a change or decision to a collective to assess: to determine a signal, whether
             for or against, or whether its impact will be positive or negative. It can include edits to
-            the group's documents, or it can simply be a question.
+            the collective's documents, or it can simply be a question.
           </p>
-          <Step n="1" title="Each group has its governing documents">
-            A group owns a set of documents, such as a constitution, a contract, or its policies.
+          <Step n="1" title="Each collective has its governing documents">
+            A collective owns a set of documents, such as a constitution, a contract, or its policies.
           </Step>
           <Step n="2" title="It can change one or several documents">
             A motion can edit a single document or several at once, for example a contract and a
@@ -272,7 +272,7 @@ a cut of the pot funds the GovFi treasury.`}</Code>
             text, not a written summary.
           </Step>
           <Step n="4" title="Publishing opens a signal">
-            When a motion is published it opens a signal, the readings the group assesses it by.
+            When a motion is published it opens a signal, the readings the collective assesses it by.
           </Step>
           <Step n="5" title="Or synced from a DAO">
             A motion can also be synced from existing DAO governance such as Snapshot, Tally, Aragon,

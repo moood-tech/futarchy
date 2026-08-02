@@ -83,13 +83,13 @@ export function Signals() {
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         {/* Left — group list + search */}
         <aside>
-          <Eyebrow>groups</Eyebrow>
+          <Eyebrow>collectives</Eyebrow>
           <div className="mt-3">
-            <SearchInput value={groupQuery} onChange={setGroupQuery} placeholder="Search groups" />
+            <SearchInput value={groupQuery} onChange={setGroupQuery} placeholder="Search collectives" />
           </div>
           <div className="mt-3 space-y-1">
             <GroupItem
-              name="All groups"
+              name="All collectives"
               count={signals.length}
               active={groupFilter === "all"}
               onClick={() => setGroupFilter("all")}
