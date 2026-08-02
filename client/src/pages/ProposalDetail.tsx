@@ -138,7 +138,7 @@ export function ProposalDetail() {
 
       {/* Forecast market (only when trading is enabled) + current sentiment. */}
       <div className={proposal.tradingEnabled ? "grid gap-5 lg:grid-cols-2" : "grid gap-5"}>
-        {/* LEFT — predicted wellbeing (futarchy-style play-money market) */}
+        {/* LEFT — predicted wellbeing (futarchy-style forecast market) */}
         {proposal.tradingEnabled && (
         <Card className="p-5">
           <div className="flex items-center gap-1.5">
@@ -146,7 +146,7 @@ export function ProposalDetail() {
             <InfoTip text="Prices are LMSR-implied probabilities." />
           </div>
           <p className="mt-1 mb-4 text-[13px] text-muted">
-            Forecasts whether the group's <strong className="text-ink font-semibold">wellbeing index</strong>{" "}
+            Forecasts whether the collective's <strong className="text-ink font-semibold">wellbeing index</strong>{" "}
             will be higher <em>under this motion</em> than the status quo, at each horizon.
           </p>
           <div className="space-y-2">
@@ -201,7 +201,7 @@ export function ProposalDetail() {
           <Card className="p-5">
             <Eyebrow>current sentiment</Eyebrow>
             <p className="mt-1 mb-4 text-[13px] text-muted">
-              How the group feels about this motion{" "}
+              How the collective feels about this motion{" "}
               <strong className="text-ink font-semibold">right now</strong>.
             </p>
             <SentimentPulse proposal={proposal} />

@@ -93,7 +93,7 @@ export function MarketCard({
         </div>
       </div>
 
-      {/* Yes / No buy interface (play-money) */}
+      {/* Yes / No buy interface */}
       <div className="mt-3 grid grid-cols-2 gap-2">
         {(["yes", "no"] as Side[]).map((s) => (
           <button

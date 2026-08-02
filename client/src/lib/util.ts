@@ -1,4 +1,4 @@
-/** Session play-money player handle. NOT an identity — a leaderboard nickname. */
+/** Session player handle. NOT an identity — a leaderboard nickname. */
 
 const HANDLES = [
   "otter",
@@ -14,7 +14,7 @@ const HANDLES = [
 export function getPlayer(): { id: string; handle: string } {
   const existing = localStorage.getItem("poc_player");
   if (existing) return JSON.parse(existing);
-  // Derive a stable-ish handle from the clock — this is a play-money nickname,
+  // Derive a stable-ish handle from the clock — this is a session nickname,
   // deliberately not tied to any real identity.
   const n = Date.now();
   const handle = `${HANDLES[n % HANDLES.length]}-${(n % 900) + 100}`;
