@@ -170,3 +170,70 @@
     @apply bg-surface text-ink shadow-sm;
   }
 }
+
+/* Marquee pill row — static when the pills fit; on hover, if they overflow, it
+   scrolls left in a seamless loop with a blurred, faded leading edge and a soft
+   fade-in on the trailing edge. */
+.marquee {
+  position: relative;
+}
+.marquee__mask {
+  overflow: hidden;
+}
+.marquee--overflow .marquee__mask {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 20px,
+    #000 calc(100% - 26px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 20px,
+    #000 calc(100% - 26px),
+    transparent 100%
+  );
+}
+.marquee__inner {
+  display: flex;
+  width: max-content;
+}
+.marquee__group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 8px;
+  flex: none;
+}
+.marquee--overflow:hover .marquee__inner {
+  animation: marquee-scroll 9s linear infinite;
+}
+.marquee--overflow::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 26px;
+  z-index: 3;
+  pointer-events: none;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  -webkit-mask-image: linear-gradient(to right, #000 25%, transparent);
+  mask-image: linear-gradient(to right, #000 25%, transparent);
+}
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee--overflow:hover .marquee__inner {
+    animation: none;
+  }
+}

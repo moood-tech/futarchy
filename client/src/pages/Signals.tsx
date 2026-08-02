@@ -111,7 +111,7 @@ export function Signals() {
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-1.5">
               <Eyebrow>signals</Eyebrow>
-              <InfoTip text="Signals are the readings attached to a motion: a play-money forecast market and current sentiment. Anyone can propose, and anyone can contribute anonymous sentiment through the open API. Advisory by default; a signal can also be set to execute its outcome automatically." />
+              <InfoTip text="Signals are the feedback on a motion: current sentiment and a forecast market. Anyone can propose a motion, and anyone can contribute anonymous sentiment through the open API. Advisory by default; a signal can also be set to execute its outcome automatically." />
             </div>
             <SearchInput value={query} onChange={setQuery} placeholder="Search" className="w-56" />
           </div>
@@ -124,7 +124,7 @@ export function Signals() {
               <Link key={p.id} to={`/signals/${p.id}`} title={`description: ${p.description}`}>
                 <Card
                   className="p-5 h-full hover:shadow-lg transition-shadow"
-                  style={p.naked ? { background: "var(--color-surface-mid)" } : undefined}
+                  style={p.naked ? { background: "var(--color-surface-soft)" } : undefined}
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     {p.naked && (
@@ -137,19 +137,27 @@ export function Signals() {
                         {groupName(p.groupId)}
                       </Pill>
                     )}
-                    {p.owner && (
-                      <span className="font-mono text-[11px] text-quiet">owned by: {p.owner}</span>
-                    )}
+                    {p.owner && <Pill tone="grey">owned by {p.owner}</Pill>}
                   </div>
-                  <h3 className="mt-3 font-heading text-[18px] font-semibold leading-snug">
-                    {p.title}
-                  </h3>
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    <h3 className="font-heading text-[18px] font-semibold leading-snug">
+                      {p.title}
+                    </h3>
+                    {p.naked && <Pill tone="red">Baseline Signal</Pill>}
+                  </div>
                   <div className="mt-4 grid grid-cols-2 gap-4">
                     {p.tradingEnabled ? (
                       <SignalRow label="predicted (1y)" value={p.marketLean} hint="P(wellbeing up)" />
                     ) : (
-                      <div className="font-mono text-[10px] text-quiet self-center">
-                        // baseline signal · no market
+                      <div className="opacity-40">
+                        <div className="flex items-center justify-between font-mono text-[11px] text-muted">
+                          <span>predicted (1y)</span>
+                          <span>00%</span>
+                        </div>
+                        <div className="mt-1">
+                          <SplitBar left={0} leftColor="var(--color-text-quiet)" rightColor="var(--color-brand-hairline)" />
+                        </div>
+                        <div className="mt-1 font-mono text-[10px] text-quiet">P(wellbeing up)</div>
                       </div>
                     )}
                     <SignalRow

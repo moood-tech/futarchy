@@ -149,7 +149,7 @@ export function Dashboard() {
 
           <Tile
             label="current index"
-            hint="A collective's wellbeing index over time, with its current index, 30-day trend, and open signals. The selector holds the organizations you belong to, plus Public for signals not owned by an organization."
+            hint="A collective's wellbeing index over time, with its current index, 30-day trend, and open signals. The selector holds the collectives you belong to, plus Public for signals not owned by a collective."
             value={
               threshold === "verified"
                 ? String(group?.currentIndexVerified ?? "—")
@@ -233,7 +233,7 @@ export function Dashboard() {
                 <Link key={p.id} to={`/signals/${p.id}`}>
                   <Card
                     className="p-4 hover:shadow-lg transition-shadow h-full"
-                    style={p.naked ? { background: "var(--color-surface-mid)" } : undefined}
+                    style={p.naked ? { background: "var(--color-surface-soft)" } : undefined}
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       {p.naked && (
@@ -241,11 +241,12 @@ export function Dashboard() {
                       )}
                       <Pill tone={p.status === "open" ? "green" : "grey"}>{p.status}</Pill>
                       <SourceBadge source={p.source} />
-                      {p.owner && (
-                        <span className="font-mono text-[11px] text-quiet">owned by: {p.owner}</span>
-                      )}
+                      {p.owner && <Pill tone="grey">owned by {p.owner}</Pill>}
                     </div>
-                    <h3 className="mt-2 font-heading text-[17px] font-semibold">{p.title}</h3>
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      <h3 className="font-heading text-[17px] font-semibold">{p.title}</h3>
+                      {p.naked && <Pill tone="red">Baseline Signal</Pill>}
+                    </div>
                     <div className="mt-2 font-mono text-[12px] text-muted">
                       {p.tradingEnabled ? `market ${pct(p.marketLean)} · ` : ""}sentiment{" "}
                       {pct(p.sentimentPositive)}
