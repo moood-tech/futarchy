@@ -92,14 +92,19 @@ function Tile({
   label,
   value,
   sub,
+  hint,
 }: {
   label: string;
   value: string;
   sub?: ReactNode;
+  hint?: string;
 }) {
   return (
     <Card className="p-5">
-      <Eyebrow>{label}</Eyebrow>
+      <div className="flex items-center gap-1.5">
+        <Eyebrow>{label}</Eyebrow>
+        {hint && <InfoTip text={hint} />}
+      </div>
       <div className="mt-2 font-heading text-[34px] font-semibold leading-none">{value}</div>
       {sub && <div className="mt-2">{sub}</div>}
     </Card>
@@ -136,15 +141,15 @@ export function Dashboard() {
         <aside className="space-y-3">
           <div>
             <div className="flex items-center gap-1.5">
-              <Eyebrow>group overview</Eyebrow>
-              <InfoTip text="A group's wellbeing index over time, with its current index, 30-day trend, and open signals. The selector holds the organizations you belong to, plus Public for signals not owned by an organization." />
+              <Eyebrow>collective</Eyebrow>
+              {group?.description && <InfoTip text={group.description} />}
             </div>
             <GroupPicker groups={groups} groupId={groupId} onPick={setGroupId} />
-            <p className="mt-2 text-[13px] text-muted">{group?.description}</p>
           </div>
 
           <Tile
             label="current index"
+            hint="A collective's wellbeing index over time, with its current index, 30-day trend, and open signals. The selector holds the collectives you belong to, plus Public for signals not owned by a collective."
             value={
               threshold === "verified"
                 ? String(group?.currentIndexVerified ?? "—")
@@ -193,7 +198,7 @@ export function Dashboard() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-1.5">
                 <Eyebrow>wellbeing index</Eyebrow>
-                <InfoTip text="An anonymous score of the group's wellbeing from 0 to 100, aggregated from open sentiment contributions. Motions are judged against it by two signals: a forecast market and current sentiment." />
+                <InfoTip text="An anonymous score of the collective's wellbeing from 0 to 100, aggregated from open sentiment contributions. Motions are judged against it by two signals: a forecast market and current sentiment." />
               </div>
               <div className="flex items-center gap-3">
                 <span className="font-mono text-[11px] text-quiet">trust threshold</span>
@@ -228,7 +233,7 @@ export function Dashboard() {
                 <Link key={p.id} to={`/signals/${p.id}`}>
                   <Card
                     className="p-4 hover:shadow-lg transition-shadow h-full"
-                    style={p.naked ? { background: "var(--color-surface-mid)" } : undefined}
+                    style={p.naked ? { background: "var(--color-surface-soft)" } : undefined}
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       {p.naked && (
@@ -236,11 +241,12 @@ export function Dashboard() {
                       )}
                       <Pill tone={p.status === "open" ? "green" : "grey"}>{p.status}</Pill>
                       <SourceBadge source={p.source} />
-                      {p.owner && (
-                        <span className="font-mono text-[11px] text-quiet">owned by: {p.owner}</span>
-                      )}
+                      {p.owner && <Pill tone="grey">owned by {p.owner}</Pill>}
                     </div>
-                    <h3 className="mt-2 font-heading text-[17px] font-semibold">{p.title}</h3>
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      <h3 className="font-heading text-[17px] font-semibold">{p.title}</h3>
+                      {p.naked && <Pill tone="red">Baseline Signal</Pill>}
+                    </div>
                     <div className="mt-2 font-mono text-[12px] text-muted">
                       {p.tradingEnabled ? `market ${pct(p.marketLean)} · ` : ""}sentiment{" "}
                       {pct(p.sentimentPositive)}

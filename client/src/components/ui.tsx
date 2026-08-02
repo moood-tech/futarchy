@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 import { cx } from "../lib/util";
 
 export function Icon({ name, className, size }: { name: string; className?: string; size?: number }) {
@@ -32,7 +32,7 @@ export function InfoTip({ text }: { text: string }) {
   );
 }
 
-type PillTone = "cyan" | "magenta" | "purple" | "green" | "grey" | "yellow";
+type PillTone = "cyan" | "magenta" | "purple" | "green" | "grey" | "yellow" | "red";
 const PILL_TONES: Record<PillTone, { bg: string; fg: string }> = {
   cyan: { bg: "var(--color-brand-blue-soft)", fg: "var(--color-cyan-60)" },
   magenta: { bg: "var(--color-brand-magenta-pill-soft)", fg: "var(--color-magenta-60)" },
@@ -40,6 +40,7 @@ const PILL_TONES: Record<PillTone, { bg: string; fg: string }> = {
   green: { bg: "var(--color-green-10)", fg: "var(--color-green-50)" },
   grey: { bg: "var(--color-brand-hairline)", fg: "var(--color-gray-70)" },
   yellow: { bg: "var(--color-yellow-10)", fg: "var(--color-yellow-50)" },
+  red: { bg: "var(--color-red-10)", fg: "var(--color-red-60)" },
 };
 
 export function Pill({ tone = "grey", children }: { tone?: PillTone; children: ReactNode }) {
@@ -48,6 +49,45 @@ export function Pill({ tone = "grey", children }: { tone?: PillTone; children: R
     <span className="pill" style={{ background: t.bg, color: t.fg }}>
       {children}
     </span>
+  );
+}
+
+/**
+ * A horizontal row of pills. When they fit, it's a plain flex row. When they
+ * overflow, it auto-scrolls left on hover in a seamless loop, with the leading
+ * edge blurred and both edges faded (see `.marquee` in index.css).
+ */
+export function MarqueePills({ children, className }: { children: ReactNode; className?: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const groupRef = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState(false);
+
+  useEffect(() => {
+    const c = containerRef.current;
+    const g = groupRef.current;
+    if (!c || !g) return;
+    const check = () => setOverflow(g.scrollWidth > c.clientWidth + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(c);
+    return () => ro.disconnect();
+  }, [children]);
+
+  return (
+    <div ref={containerRef} className={cx("marquee", overflow && "marquee--overflow", className)}>
+      <div className="marquee__mask">
+        <div className="marquee__inner">
+          <div ref={groupRef} className="marquee__group">
+            {children}
+          </div>
+          {overflow && (
+            <div className="marquee__group" aria-hidden>
+              {children}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

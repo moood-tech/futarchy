@@ -95,13 +95,13 @@ export function Proposals() {
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         {/* Left — group list + search */}
         <aside>
-          <Eyebrow>groups</Eyebrow>
+          <Eyebrow>collectives</Eyebrow>
           <div className="mt-3">
-            <SearchInput value={groupQuery} onChange={setGroupQuery} placeholder="Search groups" />
+            <SearchInput value={groupQuery} onChange={setGroupQuery} placeholder="Search collectives" />
           </div>
           <div className="mt-3 space-y-1">
             <GroupItem
-              name="All groups"
+              name="All collectives"
               count={builtIn.length}
               active={groupFilter === "all"}
               onClick={() => setGroupFilter("all")}
@@ -123,7 +123,7 @@ export function Proposals() {
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-1.5">
               <Eyebrow>motions</Eyebrow>
-              <InfoTip text="Built-in governance. Filter motions by group on the left, search them, create a new one, or open a motion to edit it with a git-style diff." />
+              <InfoTip text="Built-in governance. Filter motions by collective on the left, search them, create a new one, or open a motion to edit it with a git-style diff." />
             </div>
             <div className="flex items-center gap-2">
               <SearchInput value={query} onChange={setQuery} placeholder="Search" className="w-56" />

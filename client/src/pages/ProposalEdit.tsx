@@ -748,7 +748,7 @@ export function ProposalEdit() {
               onChange={(e) => changeGroup(e.target.value)}
               disabled={busy}
               className="rounded-xs px-2 h-7 font-mono text-[12px]"
-              title="Organization"
+              title="Collective"
             >
               {orgGroups.map((g) => (
                 <option key={g.id} value={g.id}>
@@ -962,7 +962,7 @@ export function ProposalEdit() {
                   </div>
                 </div>
                 <p className="mt-1.5 font-mono text-[10px] text-quiet">
-                  // {durationLabel} · closes {closesLabel} · dispatched to moood as a pulse on a linked org
+                  // {durationLabel} · closes {closesLabel} · dispatched to moood as a pulse on a linked collective
                 </p>
               </div>
 
@@ -971,7 +971,7 @@ export function ProposalEdit() {
                 <div className="mt-2 space-y-3">
                   <Toggle
                     label="Forecast market"
-                    hint="Play-money trading on this signal."
+                    hint="Enable forecast trading on this signal."
                     on={tradingEnabled}
                     disabled={!canEditMeta}
                     onChange={setTradingEnabled}
@@ -1135,7 +1135,7 @@ export function ProposalEdit() {
             <div
               className="mt-1 flex items-center gap-2 rounded-xs px-3 h-11 font-body text-[14px]"
               style={{ background: "var(--color-surface-mid)", border: "1px solid var(--color-border-hairline)" }}
-              title="Locked to this motion's group"
+              title="Locked to this motion's collective"
             >
               <Icon name="folder" size={16} className="text-muted" />
               {repo?.name ?? "—"}

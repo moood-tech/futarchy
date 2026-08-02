@@ -18,7 +18,7 @@ export function Portfolio() {
     <div className="space-y-6">
       <div className="flex items-center gap-1.5">
         <span className="eyebrow">my account</span>
-        <InfoTip text="Your play-money balance, open positions, and the leaderboard. The handle is a session nickname, not an identity. No real money." />
+        <InfoTip text="Your balance, open positions, and the leaderboard. The handle is a session nickname, not an identity." />
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="p-5">

@@ -71,17 +71,17 @@ Membership is open to anyone.
 New members are welcomed by a host.
 
 ## 2. Moderation
-Moderators are appointed by the founding team.
+Moderators are appointed by the founders.
 Moderators serve for an indefinite term.
 Decisions are final.
 
 ## 3. Decisions
-Day-to-day decisions are made by the founding team.`;
+Day-to-day decisions are made by the founders.`;
 
 const COHORT_DOC = `# Cohort Delta Agreement
 
 ## 1. Structure
-The cohort works together as a single group.
+The cohort works together as a single collective.
 Progress is reviewed weekly.
 
 ## 2. Support
@@ -185,7 +185,7 @@ Meeting-free Wednesdays are protected.`,
   ),
   prop_community_mod: withEdit(
     COMMUNITY_DOC,
-    `Moderators are appointed by the founding team.
+    `Moderators are appointed by the founders.
 Moderators serve for an indefinite term.
 Decisions are final.`,
     `Moderators are elected by the community.
@@ -259,13 +259,13 @@ export function seed(): void {
   const now = Date.now();
 
   // ── Groups + 2y wellbeing index ──────────────────────────────────────────
-  // "Public" holds every signal that is not part of an organization: open to
-  // everyone and anonymous. It is NOT an aggregate of the orgs — they are separate.
+  // "Public" holds every signal that is not part of a named collective: open to
+  // everyone and anonymous. It is NOT an aggregate of the collectives — they are separate.
   const global: Group = {
     id: "grp_global",
     name: "Public",
     description:
-      "All signals that are not part of an organization. Anyone can propose and contribute anonymously.",
+      "All signals that are not part of a collective. Anyone can propose and contribute anonymously.",
   };
   const leaves: Group[] = [
     {
@@ -278,7 +278,7 @@ export function seed(): void {
     {
       id: "grp_company",
       name: "Company Beta",
-      description: "A ~120-person company running moood across its teams.",
+      description: "A ~120-person company running moood company-wide.",
       documents: COMPANY_REPO,
     },
     {
@@ -314,6 +314,7 @@ export function seed(): void {
     prop_public_mhdays: 45,
     prop_fourday: 60,
     prop_office: 30,
+    prop_rnd_profit: 45,
     prop_sabbatical: 90,
     prop_community_mod: 30,
     prop_company_async: 30,
@@ -328,6 +329,10 @@ export function seed(): void {
       ageDays: number;
       pulse: { positive: number; negative: number };
       seedLean: number; // target implied P(yes) at the 1y horizon after seeding
+      // Optional per-horizon target override, for a deliberate term structure
+      // (e.g. fine now, heavily bearish by year 5). Falls back to seedLean +
+      // pull-to-50/50 for any horizon not listed.
+      horizonLeans?: Partial<Record<Horizon, number>>;
       tradingEnabled?: boolean; // default true
       naked?: boolean; // default false
     }
@@ -343,7 +348,7 @@ export function seed(): void {
       },
       title: "How are you feeling?",
       description:
-        "The daily wellbeing check-in from the moood app. A naked signal: no trading and no motion. It baselines a group's long-term sentiment, the index that every motion's forecast market is judged against.",
+        "The daily wellbeing check-in from the moood app. A naked signal: no trading and no motion. It baselines a collective's long-term sentiment, the index that every motion's forecast market is judged against.",
       owner: "moood",
       naked: true,
       tradingEnabled: false,
@@ -365,8 +370,8 @@ export function seed(): void {
         "A public standard that no one is expected to answer work messages outside working hours. Tests whether protected downtime lifts general wellbeing.",
       owner: "Digital Rights Collective",
       ageDays: 3,
-      pulse: { positive: 620, negative: 180 },
-      seedLean: 0.66,
+      pulse: { positive: 1240, negative: 85 },
+      seedLean: 0.9,
     },
     {
       id: "prop_public_mhdays",
@@ -382,19 +387,20 @@ export function seed(): void {
     },
     {
       id: "prop_fourday",
-      groupId: "grp_company",
+      groupId: "grp_global",
       source: {
         kind: "import",
         system: "Snapshot",
-        url: "https://snapshot.org/#/moood.eth/proposal/0x4d0a9c1f",
-        ref: "moood.eth · 0x4d0a…9c1f",
+        url: "https://snapshot.org/#/public.moood.eth/proposal/0x4d0a9c1f",
+        ref: "public.moood.eth · 0x4d0a…9c1f",
       },
-      title: "Move to a four-day work week",
+      title: "Shift to a four-day work week",
       description:
         "Adopt a permanent Mon to Thu schedule at full pay, protecting Fridays as no-meeting recovery time. Proponents argue it lifts sustained wellbeing; skeptics worry about delivery pressure compressing into four days.",
+      owner: "Future of Work Forum",
       ageDays: 9,
-      pulse: { positive: 148, negative: 63 },
-      seedLean: 0.68,
+      pulse: { positive: 90, negative: 1180 },
+      seedLean: 0.12,
     },
     {
       id: "prop_office",
@@ -407,10 +413,25 @@ export function seed(): void {
       },
       title: "Return to office three days a week",
       description:
-        "Require in-person attendance Tue/Wed/Thu. Intended to strengthen collaboration, with a real risk of eroding the flexibility teams currently value.",
+        "Require in-person attendance Tue/Wed/Thu. Intended to strengthen collaboration, with a real risk of eroding the flexibility people currently value.",
       ageDays: 5,
       pulse: { positive: 71, negative: 121 },
       seedLean: 0.37,
+    },
+    {
+      id: "prop_rnd_profit",
+      groupId: "grp_company",
+      source: { kind: "builtin" },
+      title: "Redirect R&D budget into profit-sharing",
+      description:
+        "Move a large share of the annual R&D budget into direct profit distribution to staff, raising take-home pay now. The open question is whether trading long-term investment for near-term cash holds up beyond a five-year horizon.",
+      owner: "Company Beta · Finance WG",
+      ageDays: 4,
+      pulse: { positive: 205, negative: 24 },
+      seedLean: 0.5,
+      // Staff want it now (high sentiment), but the market turns heavily bearish
+      // from year five onward as the lost R&D investment is priced in.
+      horizonLeans: { "1y": 0.5, "2y": 0.4, "3y": 0.29, "5y": 0.12, "10y": 0.08, "20y": 0.06, "30y": 0.05 },
     },
     {
       id: "prop_sabbatical",
@@ -434,7 +455,7 @@ export function seed(): void {
       },
       title: "Adopt community-elected moderation",
       description:
-        "Replace appointed moderators with a rotating, community-elected panel. Tests whether distributed governance improves the group's felt wellbeing.",
+        "Replace appointed moderators with a rotating, community-elected panel. Tests whether distributed governance improves the collective's felt wellbeing.",
       ageDays: 12,
       pulse: { positive: 210, negative: 140 },
       seedLean: 0.54,
@@ -461,7 +482,7 @@ export function seed(): void {
       },
       title: "Introduce peer mentorship pods",
       description:
-        "Group the cohort into small standing pods with a peer mentor, to buffer the intensity of the term. Question is whether the support outlasts the novelty.",
+        "Cluster the cohort into small standing pods with a peer mentor, to buffer the intensity of the term. Question is whether the support outlasts the novelty.",
       ageDays: 4,
       pulse: { positive: 88, negative: 26 },
       seedLean: 0.58,
@@ -523,8 +544,12 @@ export function seed(): void {
       "30y": 0.8,
     };
     for (const m of markets) {
-      const target = p.seedLean + (0.5 - p.seedLean) * horizonPull[m.horizon];
-      const rounds = 5 + Math.floor(rng() * 4);
+      const target =
+        p.horizonLeans?.[m.horizon] ??
+        p.seedLean + (0.5 - p.seedLean) * horizonPull[m.horizon];
+      // More trades the further the target sits from 50/50, so extreme,
+      // confident markets actually reach their target rather than undershoot.
+      const rounds = 5 + Math.floor(rng() * 4) + Math.round(Math.abs(0.5 - target) * 26);
       for (let i = 0; i < rounds; i++) {
         const current = m.lmsr.qYes; // proxy; recompute via prices below
         const impliedYes =
