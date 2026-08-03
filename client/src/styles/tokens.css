@@ -115,7 +115,7 @@
   --color-surface: var(--color-white);
   --color-surface-cream: var(--color-brand-cream);
   --color-surface-mid: var(--color-brand-surface-mid);
-  --color-surface-soft: #faf9f7; /* lighter than surface-mid; baseline/naked cards */
+  --color-surface-soft: #f7f5f2; /* lighter than surface-mid; baseline/naked cards */
   --color-surface-inverse: var(--color-gray-100);
   --color-input-bg: var(--color-white);
   --color-text-primary: var(--color-gray-100);

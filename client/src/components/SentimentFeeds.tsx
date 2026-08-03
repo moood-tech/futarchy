@@ -61,8 +61,12 @@ function Bubble({
       }}
     >
       <span
-        className={primary ? "font-heading font-semibold lowercase" : "font-mono font-semibold"}
-        style={{ fontSize: primary ? 30 : Math.max(9, r / 3.2), lineHeight: 1.05 }}
+        className={primary ? "lowercase" : "font-mono font-semibold"}
+        style={{
+          fontSize: primary ? 34 : Math.max(9, r / 3.2),
+          lineHeight: 1.05,
+          ...(primary ? { fontFamily: "'Magical Night', Geist, sans-serif" } : {}),
+        }}
       >
         {name}
       </span>
