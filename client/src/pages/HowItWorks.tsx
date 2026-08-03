@@ -178,20 +178,21 @@ export function HowItWorks() {
                 </Step>
                 <Step n="5" title="Markets">
                   <p>
-                    A market is an optional layer attached to a signal. Participants stake on where a
-                    collective's wellbeing index will sit over time, across horizons from 1 to 30 years, so
-                    for a signal carrying a motion or pulse, the market is a forecast of its long-term
-                    effect on that index.
+                    A market is a prediction market on a collective's wellbeing index, the metric futarchy
+                    optimises. For a signal carrying a motion or pulse, it forecasts the index conditional
+                    on that signal across horizons from 1 to 30 years, and the price is the market's
+                    estimate of the signal's long-term effect on the index.
                   </p>
                   <p>
-                    A single market has a blind spot. A motion can raise the proposing collective's index
-                    while lowering the wellbeing of people outside it, and a market on that index alone
-                    would never register the harm. This is the externality problem in strict futarchy: a
-                    collective is rewarded for gains it keeps and costs it exports. So alongside that{" "}
-                    <B>internal market</B>, each motion also carries an <B>external market</B> on the
-                    wellbeing index of the broader group it affects, such as the public. Weighted by the
-                    size of each group, the two together show whether a motion is a real improvement or a
-                    cost shifted onto outsiders.
+                    Optimising a single collective's index has a failure mode. The decision rule sees only
+                    that one metric, so a motion that raises the proposing collective's index at the expense
+                    of people outside it still clears the market. The price is efficient; the objective is
+                    misspecified. It internalises the proposer's welfare and prices the externality at zero.
+                    moood runs the forecast on two metrics instead: each motion carries an{" "}
+                    <B>internal market</B> on the proposing collective's index and an <B>external market</B>{" "}
+                    on the wellbeing index of the population it affects. Weighted by population, the two
+                    approximate the change in total welfare, so a motion that is a gain for the collective
+                    but a net loss overall is legible rather than rewarded.
                   </p>
                 </Step>
               </div>
