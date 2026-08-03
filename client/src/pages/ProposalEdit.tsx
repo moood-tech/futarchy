@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { api, type DocChange, type GroupSummary, type ProposalDetail as Detail } from "../lib/api";
 import { Card, Eyebrow, Icon, Modal, Pill, SourceBadge } from "../components/ui";
 import { DatePicker, TimePicker } from "../components/DateTimePicker";
-import { MarkdownEditor } from "../components/markdown";
+import { Markdown, MarkdownEditor } from "../components/markdown";
 import { type DiffHunkLine, type DiffLine, lineDiff, toHunks } from "../lib/diff";
 import { cx, pct } from "../lib/util";
 
@@ -466,7 +466,9 @@ export function ProposalEdit() {
   const [draftTarget, setDraftTarget] = useState<CommentTarget | null>(null);
   const [draftBody, setDraftBody] = useState("");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
-  const [rightTab, setRightTab] = useState<"changes" | "comments">("changes");
+  const [rightTab, setRightTab] = useState<"changes" | "comments" | "source">("changes");
+  // Within the Source tab: raw markdown editor vs rendered publishing view.
+  const [docView, setDocView] = useState<"source" | "preview">("source");
 
   const load = useCallback(() => {
     if (!id) return;
@@ -701,6 +703,11 @@ export function ProposalEdit() {
   const canEditMeta = !isSynced && editMode; // title, description, signal window, group
   const canEditDocs = editMode; // documents are editable even on a synced proposal
   const selectedChange = changes.find((c) => c.documentId === selectedDocId) ?? null;
+  // Which right-hand panel is shown. Changes needs a document; Source needs one
+  // selected; Comments is the fallback.
+  const showChanges = rightTab === "changes" && changes.length > 0;
+  const showSource = rightTab === "source" && !!selectedChange;
+  const showComments = !showChanges && !showSource;
   const isNew = searchParams.get("new") !== null;
   const orgGroups = allGroups.filter((g) => g.documents.length);
   const repo = allGroups.find((g) => g.id === proposal.groupId);
@@ -922,7 +929,10 @@ export function ProposalEdit() {
                 {changes.map((c) => (
                   <div
                     key={c.documentId}
-                    onClick={() => setSelectedDocId(c.documentId)}
+                    onClick={() => {
+                      setSelectedDocId(c.documentId);
+                      setRightTab("source");
+                    }}
                     className={cx(
                       "flex items-center gap-2 px-3 h-10 cursor-pointer transition-colors",
                       selectedDocId === c.documentId ? "bg-cream" : "hover:bg-cream",
@@ -955,23 +965,6 @@ export function ProposalEdit() {
                   <Icon name="add" size={15} /> add document
                 </button>
               )}
-
-              {/* Editor for the selected document */}
-              {selectedChange && (
-                <MarkdownEditor
-                  key={selectedChange.documentId}
-                  value={selectedChange.proposedDoc}
-                  path={`governance/${selectedChange.documentName}.md`}
-                  readOnly={!canEditDocs}
-                  onChange={(v) =>
-                    setChanges((prev) =>
-                      prev.map((x) =>
-                        x.documentId === selectedChange.documentId ? { ...x, proposedDoc: v } : x,
-                      ),
-                    )
-                  }
-                />
-              )}
             </div>
           )}
 
@@ -1003,19 +996,20 @@ export function ProposalEdit() {
           <div className="flex items-center justify-between h-9 gap-3">
             <div className="segmented">
               {changes.length > 0 && (
-                <button className="seg" data-active={rightTab === "changes"} onClick={() => setRightTab("changes")}>
+                <button className="seg" data-active={showChanges} onClick={() => setRightTab("changes")}>
                   Changes ({changes.length})
                 </button>
               )}
-              <button
-                className="seg"
-                data-active={changes.length === 0 || rightTab === "comments"}
-                onClick={() => setRightTab("comments")}
-              >
+              {selectedChange && (
+                <button className="seg" data-active={showSource} onClick={() => setRightTab("source")}>
+                  Source
+                </button>
+              )}
+              <button className="seg" data-active={showComments} onClick={() => setRightTab("comments")}>
                 Comments{comments.length ? ` (${comments.length})` : ""}
               </button>
             </div>
-            {rightTab === "changes" && changes.length > 0 && (
+            {showChanges && (
               <span className="font-mono text-[11px] text-muted shrink-0">
                 <span style={{ color: "var(--color-status-success)" }}>+{totalStat.add}</span>{" "}
                 <span style={{ color: "var(--color-status-error)" }}>−{totalStat.del}</span>
@@ -1023,9 +1017,19 @@ export function ProposalEdit() {
                 {changes.length} {changes.length === 1 ? "file" : "files"}
               </span>
             )}
+            {showSource && (
+              <div className="segmented shrink-0">
+                <button className="seg" data-active={docView === "source"} onClick={() => setDocView("source")}>
+                  Raw
+                </button>
+                <button className="seg" data-active={docView === "preview"} onClick={() => setDocView("preview")}>
+                  Preview
+                </button>
+              </div>
+            )}
           </div>
 
-          {changes.length > 0 && rightTab === "changes" ? (
+          {showChanges ? (
             changes.map((c) => (
               <DocDiff
                 key={c.documentId}
@@ -1034,6 +1038,34 @@ export function ProposalEdit() {
                 onStartComment={startDraft}
               />
             ))
+          ) : showSource && selectedChange ? (
+            docView === "source" ? (
+              <MarkdownEditor
+                key={selectedChange.documentId}
+                value={selectedChange.proposedDoc}
+                path={`governance/${selectedChange.documentName}.md`}
+                readOnly={!canEditDocs}
+                onChange={(v) =>
+                  setChanges((prev) =>
+                    prev.map((x) =>
+                      x.documentId === selectedChange.documentId ? { ...x, proposedDoc: v } : x,
+                    ),
+                  )
+                }
+              />
+            ) : (
+              <Card className="p-0 overflow-hidden">
+                <div
+                  className="px-4 py-2 font-mono text-[11px] text-quiet"
+                  style={{ background: "var(--color-surface-mid)", borderBottom: "1px solid var(--color-border-hairline)" }}
+                >
+                  governance/{selectedChange.documentName}.md
+                </div>
+                <div className="p-4">
+                  <Markdown source={selectedChange.proposedDoc} />
+                </div>
+              </Card>
+            )
           ) : (
             <div className="space-y-3">
               {drafting && (
