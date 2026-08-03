@@ -454,7 +454,7 @@ export function ProposalEdit() {
   const naked = changes.length === 0;
   const [busy, setBusy] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
-  const [tab, setTab] = useState<"details" | "documents" | "comments">("details");
+  const [tab, setTab] = useState<"details" | "documents">("details");
   const [addModal, setAddModal] = useState(false);
   const [delModal, setDelModal] = useState(false);
   const [removeDocId, setRemoveDocId] = useState<string | null>(null);
@@ -466,7 +466,9 @@ export function ProposalEdit() {
   const [draftTarget, setDraftTarget] = useState<CommentTarget | null>(null);
   const [draftBody, setDraftBody] = useState("");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
-  const [rightTab, setRightTab] = useState<"diff" | "preview">("diff");
+  const [rightTab, setRightTab] = useState<"changes" | "comments" | "source">("changes");
+  // Within the Source tab: raw markdown editor vs rendered publishing view.
+  const [docView, setDocView] = useState<"source" | "preview">("source");
 
   const load = useCallback(() => {
     if (!id) return;
@@ -589,7 +591,7 @@ export function ProposalEdit() {
     setDraftBody("");
     setDrafting(true);
     setHighlightLine(target ? target.lineId : null);
-    setTab("comments");
+    setRightTab("comments");
   }
 
   function cancelDraft() {
@@ -626,6 +628,7 @@ export function ProposalEdit() {
   }
 
   function jumpToLine(lineId: string) {
+    setRightTab("changes");
     setHighlightLine(lineId);
     const el = document.getElementById(lineId);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -700,6 +703,11 @@ export function ProposalEdit() {
   const canEditMeta = !isSynced && editMode; // title, description, signal window, group
   const canEditDocs = editMode; // documents are editable even on a synced proposal
   const selectedChange = changes.find((c) => c.documentId === selectedDocId) ?? null;
+  // Which right-hand panel is shown. Changes needs a document; Source needs one
+  // selected; Comments is the fallback.
+  const showChanges = rightTab === "changes" && changes.length > 0;
+  const showSource = rightTab === "source" && !!selectedChange;
+  const showComments = !showChanges && !showSource;
   const isNew = searchParams.get("new") !== null;
   const orgGroups = allGroups.filter((g) => g.documents.length);
   const repo = allGroups.find((g) => g.id === proposal.groupId);
@@ -760,6 +768,31 @@ export function ProposalEdit() {
           ) : (
             <Pill tone="purple">{repo?.name ?? "—"}</Pill>
           )}
+          {editMode && proposal.source.kind === "builtin" && (
+            <button
+              onClick={() => setDelModal(true)}
+              disabled={busy}
+              className="text-quiet hover:text-ink transition-colors"
+              title="Delete motion"
+              aria-label="Delete motion"
+            >
+              <Icon name="delete" size={15} />
+            </button>
+          )}
+          {!editMode && (
+            <>
+              <span className="font-mono text-[11px] text-muted">
+                {proposal.tradingEnabled && <>predicted {pct(proposal.marketLean)} · </>}
+                {pct(proposal.sentimentPositive)} positive
+              </span>
+              <Link
+                to={`/signals/${proposal.id}`}
+                className="font-mono text-[11px] text-ink hover:underline inline-flex items-center gap-1"
+              >
+                view signal <Icon name="arrow_forward" size={12} />
+              </Link>
+            </>
+          )}
           {changes.length > 0 && (
             <span className="font-mono text-[11px]">
               <span style={{ color: "var(--color-status-success)" }}>+{totalStat.add}</span>{" "}
@@ -767,21 +800,13 @@ export function ProposalEdit() {
             </span>
           )}
           <div className="ml-auto flex items-center gap-2">
-            {!editMode && (
+            {!editMode ? (
               <button className="btn btn-secondary btn-sm" onClick={() => setEditMode(true)}>
                 <Icon name="edit" size={16} /> Edit
               </button>
-            )}
-            {editMode && proposal.source.kind === "builtin" && (
-              <button
-                onClick={() => setDelModal(true)}
-                disabled={busy}
-                className="grid place-items-center w-8 h-8 rounded-sm text-muted hover:text-ink transition-colors"
-                style={{ background: "var(--color-surface-mid)" }}
-                title="Delete motion"
-                aria-label="Delete motion"
-              >
-                <Icon name="delete" size={16} />
+            ) : (
+              <button className="btn btn-secondary btn-sm" onClick={revert}>
+                <Icon name="arrow_back" size={16} /> Back
               </button>
             )}
           </div>
@@ -813,108 +838,18 @@ export function ProposalEdit() {
       <div className="grid gap-6 lg:grid-cols-2 items-start">
         {/* LEFT — signal summary (view only) + editor */}
         <div className="space-y-4">
-          {!editMode && (
-            <Card className="p-4">
-              <Eyebrow>signal</Eyebrow>
-              <div className="mt-2 grid grid-cols-2 gap-4">
-                <div>
-                  <div className="font-mono text-[11px] text-muted">predicted (1y)</div>
-                  <div className="mt-0.5 font-heading text-[22px] font-semibold leading-none">
-                    {pct(proposal.marketLean)}
-                  </div>
-                  <div className="mt-1 font-mono text-[10px] text-quiet">P(wellbeing up)</div>
-                </div>
-                <div>
-                  <div className="font-mono text-[11px] text-muted">sentiment</div>
-                  <div className="mt-1 flex items-baseline gap-3 font-mono text-[14px] font-semibold">
-                    <span style={{ color: "var(--color-status-success)" }}>
-                      ▲ {proposal.pulse.positive}
-                    </span>
-                    <span style={{ color: "var(--color-magenta-70)" }}>
-                      ▼ {proposal.pulse.negative}
-                    </span>
-                  </div>
-                  <div className="mt-1 font-mono text-[10px] text-quiet">
-                    {pct(proposal.sentimentPositive)} positive
-                  </div>
-                </div>
-              </div>
-            </Card>
-          )}
-          <div className="segmented">
-            <button className="seg" data-active={tab === "details"} onClick={() => setTab("details")}>
-              Details
-            </button>
-            {(changes.length > 0 || editMode) && (
-              <button className="seg" data-active={tab === "documents"} onClick={() => setTab("documents")}>
-                Documents{changes.length ? ` (${changes.length})` : ""}
+          <div className="flex items-center h-9">
+            <div className="segmented">
+              <button className="seg" data-active={tab === "details"} onClick={() => setTab("details")}>
+                Details
               </button>
-            )}
-            <button className="seg" data-active={tab === "comments"} onClick={() => setTab("comments")}>
-              Comments{comments.length ? ` (${comments.length})` : ""}
-            </button>
-          </div>
-
-          {tab === "comments" && (
-            <div className="space-y-3">
-              {drafting && (
-                <Card className="p-4">
-                  {draftTarget ? (
-                    <>
-                      <div className="flex items-center gap-1.5 font-mono text-[11px]" style={{ color: "var(--color-purple-70)" }}>
-                        <Icon name="my_location" size={13} /> {draftTarget.documentName} · {draftTarget.lineNo}
-                      </div>
-                      <div
-                        className="mt-1.5 rounded-md px-2 py-1 font-mono text-[11px] overflow-x-auto whitespace-pre"
-                        style={{ background: "var(--color-purple-20)", color: "var(--color-purple-70)" }}
-                      >
-                        {draftTarget.lineText || "(blank line)"}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="font-mono text-[11px] text-muted">new comment</div>
-                  )}
-                  <textarea
-                    value={draftBody}
-                    onChange={(e) => setDraftBody(e.target.value)}
-                    autoFocus
-                    rows={3}
-                    placeholder="Write a comment"
-                    className="mt-2 w-full rounded-xs px-2 py-1 font-body text-[13px] resize-none"
-                  />
-                  <div className="mt-1.5 flex gap-2">
-                    <button className="btn btn-primary btn-sm" disabled={!draftBody.trim()} onClick={submitDraft}>
-                      Comment
-                    </button>
-                    <button className="btn btn-secondary btn-sm" onClick={cancelDraft}>
-                      Cancel
-                    </button>
-                  </div>
-                </Card>
-              )}
-
-              {comments.map((c) => (
-                <CommentCard key={c.id} comment={c} onJump={jumpToLine} onReply={addReply} />
-              ))}
-
-              {comments.length === 0 && !drafting && (
-                <Card className="p-5 text-[13px] text-muted">
-                  No comments yet. Click a line number in the diff to comment on it, or add a comment
-                  below.
-                </Card>
-              )}
-
-              {!drafting && (
-                <button
-                  onClick={() => startDraft(null)}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-lg py-2.5 font-mono text-[12px] text-quiet hover:text-ink transition-colors"
-                  style={{ border: "1px dashed var(--color-border-hairline)" }}
-                >
-                  <Icon name="add" size={15} /> add comment
+              {(changes.length > 0 || editMode) && (
+                <button className="seg" data-active={tab === "documents"} onClick={() => setTab("documents")}>
+                  Documents{changes.length ? ` (${changes.length})` : ""}
                 </button>
               )}
             </div>
-          )}
+          </div>
 
           {tab === "details" && (
             <Card className="p-5 space-y-4">
@@ -962,23 +897,25 @@ export function ProposalEdit() {
                     />
                   </div>
                 </div>
-                <p className="mt-1.5 font-mono text-[10px] text-quiet">
-                  // {durationLabel} · closes {closesLabel} · dispatched to moood as a pulse on a linked collective
+                <p className="mt-1.5 font-mono text-[10px] text-quiet italic">
+                  {durationLabel} · closes {closesLabel} · dispatched to moood as a pulse on a linked collective
                 </p>
               </div>
 
-              <div>
-                <Eyebrow>options</Eyebrow>
-                <div className="mt-2 space-y-3">
-                  <Toggle
-                    label="Forecast market"
-                    hint="Enable forecast trading on this signal."
-                    on={tradingEnabled}
-                    disabled={!canEditMeta}
-                    onChange={setTradingEnabled}
-                  />
+              {editMode && (
+                <div>
+                  <Eyebrow>options</Eyebrow>
+                  <div className="mt-2 space-y-3">
+                    <Toggle
+                      label="Forecast market"
+                      hint="Enable forecast trading on this signal."
+                      on={tradingEnabled}
+                      disabled={!canEditMeta}
+                      onChange={setTradingEnabled}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </Card>
           )}
 
@@ -987,12 +924,15 @@ export function ProposalEdit() {
               {/* Document list */}
               <Card className="p-0 overflow-hidden divide-y divide-hairline">
                 {changes.length === 0 && (
-                  <div className="p-4 text-[13px] text-muted">No documents in this motion yet.</div>
+                  <div className="p-5 text-[13px] text-muted">No documents in this motion yet.</div>
                 )}
                 {changes.map((c) => (
                   <div
                     key={c.documentId}
-                    onClick={() => setSelectedDocId(c.documentId)}
+                    onClick={() => {
+                      setSelectedDocId(c.documentId);
+                      setRightTab("source");
+                    }}
                     className={cx(
                       "flex items-center gap-2 px-3 h-10 cursor-pointer transition-colors",
                       selectedDocId === c.documentId ? "bg-cream" : "hover:bg-cream",
@@ -1017,39 +957,29 @@ export function ProposalEdit() {
               </Card>
 
               {canEditDocs && (
-                <button className="btn btn-secondary btn-sm" onClick={() => setAddModal(true)}>
-                  <Icon name="add" size={16} /> Add document
+                <button
+                  onClick={() => setAddModal(true)}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg py-2.5 font-mono text-[12px] text-quiet hover:text-ink transition-colors"
+                  style={{ border: "1px dashed var(--color-border-hairline)" }}
+                >
+                  <Icon name="add" size={15} /> add document
                 </button>
-              )}
-
-              {/* Editor for the selected document */}
-              {selectedChange && (
-                <MarkdownEditor
-                  key={selectedChange.documentId}
-                  value={selectedChange.proposedDoc}
-                  path={`governance/${selectedChange.documentName}.md`}
-                  readOnly={!canEditDocs}
-                  onChange={(v) =>
-                    setChanges((prev) =>
-                      prev.map((x) =>
-                        x.documentId === selectedChange.documentId ? { ...x, proposedDoc: v } : x,
-                      ),
-                    )
-                  }
-                />
               )}
             </div>
           )}
 
           {editMode && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-end gap-2">
+              <button className="btn btn-secondary btn-sm" onClick={revert}>
+                Cancel
+              </button>
               {proposal.status === "draft" ? (
                 <>
-                  <button className="btn btn-primary btn-sm" disabled={busy || !title.trim() || !windowValid} onClick={publish}>
-                    <Icon name="publish" size={16} /> Publish
-                  </button>
                   <button className="btn btn-secondary btn-sm" disabled={busy || !dirty || !title.trim() || !windowValid} onClick={commit}>
                     <Icon name="commit" size={16} /> Save draft
+                  </button>
+                  <button className="btn btn-primary btn-sm" disabled={busy || !title.trim() || !windowValid} onClick={publish}>
+                    <Icon name="publish" size={16} /> Publish
                   </button>
                 </>
               ) : (
@@ -1057,44 +987,49 @@ export function ProposalEdit() {
                   <Icon name="commit" size={16} /> Commit
                 </button>
               )}
-              <button className="btn btn-secondary btn-sm" onClick={revert}>
-                {dirty ? "Revert" : "Cancel"}
-              </button>
             </div>
           )}
         </div>
 
-        {/* RIGHT — diff / preview */}
-        <div className="space-y-3">
+        {/* RIGHT — changes + comments */}
+        <div className="space-y-4">
           <div className="flex items-center justify-between h-9 gap-3">
-            {changes.length === 0 ? (
-              <Eyebrow>proposed change</Eyebrow>
-            ) : (
-              <div className="segmented">
-                <button className="seg" data-active={rightTab === "diff"} onClick={() => setRightTab("diff")}>
-                  Diff
+            <div className="segmented">
+              {changes.length > 0 && (
+                <button className="seg" data-active={showChanges} onClick={() => setRightTab("changes")}>
+                  Changes ({changes.length})
                 </button>
-                <button
-                  className="seg"
-                  data-active={rightTab === "preview"}
-                  onClick={() => setRightTab("preview")}
-                >
+              )}
+              {selectedChange && (
+                <button className="seg" data-active={showSource} onClick={() => setRightTab("source")}>
+                  Source
+                </button>
+              )}
+              <button className="seg" data-active={showComments} onClick={() => setRightTab("comments")}>
+                Comments{comments.length ? ` (${comments.length})` : ""}
+              </button>
+            </div>
+            {showChanges && (
+              <span className="font-mono text-[11px] text-muted shrink-0">
+                <span style={{ color: "var(--color-status-success)" }}>+{totalStat.add}</span>{" "}
+                <span style={{ color: "var(--color-status-error)" }}>−{totalStat.del}</span>
+                {" · "}
+                {changes.length} {changes.length === 1 ? "file" : "files"}
+              </span>
+            )}
+            {showSource && (
+              <div className="segmented shrink-0">
+                <button className="seg" data-active={docView === "source"} onClick={() => setDocView("source")}>
+                  Raw
+                </button>
+                <button className="seg" data-active={docView === "preview"} onClick={() => setDocView("preview")}>
                   Preview
                 </button>
               </div>
             )}
-            <span className="font-mono text-[11px] text-muted shrink-0">
-              <span style={{ color: "var(--color-status-success)" }}>+{totalStat.add}</span>{" "}
-              <span style={{ color: "var(--color-status-error)" }}>−{totalStat.del}</span>
-              {" · "}
-              {changes.length} {changes.length === 1 ? "file" : "files"}
-            </span>
           </div>
-          {changes.length === 0 ? (
-            <Card className="p-5 text-[13px] text-muted">
-              No document changes. This motion is title and details only.
-            </Card>
-          ) : rightTab === "diff" ? (
+
+          {showChanges ? (
             changes.map((c) => (
               <DocDiff
                 key={c.documentId}
@@ -1103,20 +1038,94 @@ export function ProposalEdit() {
                 onStartComment={startDraft}
               />
             ))
-          ) : (
-            <Card className="p-0 overflow-hidden">
-              {selectedChange && (
+          ) : showSource && selectedChange ? (
+            docView === "source" ? (
+              <MarkdownEditor
+                key={selectedChange.documentId}
+                value={selectedChange.proposedDoc}
+                path={`governance/${selectedChange.documentName}.md`}
+                readOnly={!canEditDocs}
+                onChange={(v) =>
+                  setChanges((prev) =>
+                    prev.map((x) =>
+                      x.documentId === selectedChange.documentId ? { ...x, proposedDoc: v } : x,
+                    ),
+                  )
+                }
+              />
+            ) : (
+              <Card className="p-0 overflow-hidden">
                 <div
                   className="px-4 py-2 font-mono text-[11px] text-quiet"
                   style={{ background: "var(--color-surface-mid)", borderBottom: "1px solid var(--color-border-hairline)" }}
                 >
                   governance/{selectedChange.documentName}.md
                 </div>
+                <div className="p-4">
+                  <Markdown source={selectedChange.proposedDoc} />
+                </div>
+              </Card>
+            )
+          ) : (
+            <div className="space-y-3">
+              {drafting && (
+                <Card className="p-4">
+                  {draftTarget ? (
+                    <>
+                      <div className="flex items-center gap-1.5 font-mono text-[11px]" style={{ color: "var(--color-purple-70)" }}>
+                        <Icon name="my_location" size={13} /> {draftTarget.documentName} · {draftTarget.lineNo}
+                      </div>
+                      <div
+                        className="mt-1.5 rounded-md px-2 py-1 font-mono text-[11px] overflow-x-auto whitespace-pre"
+                        style={{ background: "var(--color-purple-20)", color: "var(--color-purple-70)" }}
+                      >
+                        {draftTarget.lineText || "(blank line)"}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="font-mono text-[11px] text-muted">new comment</div>
+                  )}
+                  <textarea
+                    value={draftBody}
+                    onChange={(e) => setDraftBody(e.target.value)}
+                    autoFocus
+                    rows={3}
+                    placeholder="Write a comment"
+                    className="mt-2 w-full rounded-xs px-2 py-1 font-body text-[13px] resize-none"
+                  />
+                  <div className="mt-1.5 flex gap-2">
+                    <button className="btn btn-primary btn-sm" disabled={!draftBody.trim()} onClick={submitDraft}>
+                      Comment
+                    </button>
+                    <button className="btn btn-secondary btn-sm" onClick={cancelDraft}>
+                      Cancel
+                    </button>
+                  </div>
+                </Card>
               )}
-              <div className="p-4">
-                <Markdown source={selectedChange?.proposedDoc ?? ""} />
-              </div>
-            </Card>
+
+              {comments.map((c) => (
+                <CommentCard key={c.id} comment={c} onJump={jumpToLine} onReply={addReply} />
+              ))}
+
+              {comments.length === 0 && !drafting && (
+                <Card className="p-5 text-[13px] text-muted">
+                  {changes.length > 0
+                    ? "No comments yet. Click a line number in a diff to comment on it, or add a comment below."
+                    : "No comments yet."}
+                </Card>
+              )}
+
+              {!drafting && (
+                <button
+                  onClick={() => startDraft(null)}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg py-2.5 font-mono text-[12px] text-quiet hover:text-ink transition-colors"
+                  style={{ border: "1px dashed var(--color-border-hairline)" }}
+                >
+                  <Icon name="add" size={15} /> add comment
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

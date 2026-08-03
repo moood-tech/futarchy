@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { api, type Portfolio, type ProposalDetail as Detail } from "../lib/api";
-import { MarketCard } from "../components/MarketCard";
+import { MarketCard, MARKET_THEME } from "../components/MarketCard";
 import { SentimentFeeds } from "../components/SentimentFeeds";
 import { Card, Eyebrow, Icon, InfoTip, Pill, SourceBadge } from "../components/ui";
 import { getPlayer, pct, pct1 } from "../lib/util";
@@ -95,19 +95,18 @@ export function ProposalDetail() {
     refresh();
   }, [refresh]);
 
-  // Default the accordion to the first (shortest) horizon of the selected
-  // market, and re-open it when switching between internal and external.
-  useEffect(() => {
-    if (!proposal) return;
-    const visible = proposal.markets.filter((m) => m.scope === marketTab);
-    if (visible.length && !visible.some((m) => m.id === expandedId)) {
-      setExpandedId(visible[0].id);
-    }
-  }, [proposal, marketTab, expandedId]);
-
   if (!proposal) return <div className="text-muted">Loading…</div>;
 
   const visibleMarkets = proposal.markets.filter((m) => m.scope === marketTab);
+  // Which horizon's card is expanded, resolved during render. If the remembered
+  // id isn't in the current scope (e.g. just switched internal↔external) fall
+  // back to the first horizon here rather than in an effect — an effect would
+  // leave one frame with everything collapsed, and that height collapse is what
+  // caused the flicker when switching while scrolled down.
+  const theme = MARKET_THEME[marketTab];
+  const activeId = visibleMarkets.some((m) => m.id === expandedId)
+    ? expandedId
+    : (visibleMarkets[0]?.id ?? null);
 
   return (
     <div className="space-y-6">
@@ -165,8 +164,9 @@ export function ProposalDetail() {
           <p className="mt-2 mb-4 text-[13px] text-muted">
             {marketTab === "internal" ? (
               <>
-                Forecasts whether <strong className="text-ink font-semibold">this collective's</strong>{" "}
-                wellbeing index will be higher under this motion than the status quo, at each horizon.
+                Forecasts the motion's effect on{" "}
+                <strong className="text-ink font-semibold">this collective's own</strong> wellbeing index,
+                at each horizon.
               </>
             ) : (
               <>
@@ -178,7 +178,7 @@ export function ProposalDetail() {
           </p>
           <div className="space-y-2">
             {visibleMarkets.map((m) =>
-              m.id === expandedId ? (
+              m.id === activeId ? (
                 <MarketCard
                   key={m.id}
                   market={m}
@@ -191,18 +191,18 @@ export function ProposalDetail() {
                   key={m.id}
                   onClick={() => setExpandedId(m.id)}
                   className="w-full flex items-center justify-between rounded-lg px-4 py-3 transition-colors hover:brightness-[0.97]"
-                  style={{ background: "var(--color-emphasis-bg-light)", border: "1px solid #e5defc" }}
+                  style={{ background: theme.bgLight, border: `1px solid ${theme.border}` }}
                 >
                   <div className="flex items-center gap-3">
                     <span
                       className="font-mono text-[12px] font-semibold uppercase tracking-[0.06em]"
-                      style={{ color: "var(--color-emphasis-text)" }}
+                      style={{ color: theme.text }}
                     >
                       {marketLabel(m.years)}
                     </span>
                     <span
                       className="font-mono text-[10px] font-semibold rounded-pill px-2 py-0.5"
-                      style={{ background: "var(--color-emphasis-bg-deep)", color: "var(--color-emphasis-text)" }}
+                      style={{ background: theme.bgDeep, color: theme.text }}
                     >
                       ×{m.payoutMultiplier.toFixed(2)} payout
                     </span>
@@ -210,7 +210,7 @@ export function ProposalDetail() {
                   <div className="flex items-center gap-2">
                     <span
                       className="font-heading text-[18px] font-semibold leading-none"
-                      style={{ color: "var(--color-emphasis-text)" }}
+                      style={{ color: theme.text }}
                     >
                       {pct1(m.impliedYes)}
                     </span>

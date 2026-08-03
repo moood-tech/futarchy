@@ -6,6 +6,29 @@ import { Icon } from "./ui";
 
 const SIDE_LABEL: Record<Side, string> = { yes: "positive", no: "negative" };
 
+/** Per-scope market palette. Internal (the collective's own index) keeps the
+ *  brand purple; external (the wider public) is a cool blue so the two markets
+ *  read as two distinct objectives. Tweak the external values to reshade. */
+export const MARKET_THEME: Record<
+  "internal" | "external",
+  { bgLight: string; bgDeep: string; text: string; border: string; line: string }
+> = {
+  internal: {
+    bgLight: "var(--color-emphasis-bg-light)",
+    bgDeep: "var(--color-emphasis-bg-deep)",
+    text: "var(--color-emphasis-text)",
+    border: "#e5defc",
+    line: "#5a2dbf",
+  },
+  external: {
+    bgLight: "#e9f3fc",
+    bgDeep: "#d1e6f9",
+    text: "#00539a",
+    border: "#d3e6f7",
+    line: "#1192e8",
+  },
+};
+
 const HORIZON_LABEL: Record<string, string> = {
   "1y": "1 year",
   "2y": "2 years",
@@ -62,19 +85,20 @@ export function MarketCard({
   }
 
   const canAfford = quote ? quote.cost <= balance + 1e-9 : true;
+  const t = MARKET_THEME[market.scope];
 
   return (
     <div
       className="rounded-lg p-4"
-      style={{ background: "var(--color-emphasis-bg-light)", border: "1px solid #e5defc" }}
+      style={{ background: t.bgLight, border: `1px solid ${t.border}` }}
     >
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--color-emphasis-text)" }}>
+        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: t.text }}>
           {HORIZON_LABEL[market.horizon]}
         </span>
         <span
           className="font-mono text-[10px] font-semibold rounded-pill px-2 py-0.5"
-          style={{ background: "var(--color-emphasis-bg-deep)", color: "var(--color-emphasis-text)" }}
+          style={{ background: t.bgDeep, color: t.text }}
           title={`payout multiplier: ${(market.baselineRate * 100).toFixed(0)}%/yr baseline compounded over ${market.years}y`}
         >
           ×{market.payoutMultiplier.toFixed(2)} payout
@@ -83,13 +107,13 @@ export function MarketCard({
 
       <div className="mt-1 flex items-end justify-between gap-3">
         <div>
-          <div className="font-heading text-[30px] font-semibold leading-none" style={{ color: "var(--color-emphasis-text)" }}>
+          <div className="font-heading text-[30px] font-semibold leading-none" style={{ color: t.text }}>
             {pct1(market.impliedYes)}
           </div>
           <div className="font-mono text-[10px] text-muted mt-1">implied P(index up)</div>
         </div>
         <div className="w-28">
-          <Sparkline history={market.history} />
+          <Sparkline history={market.history} stroke={t.line} />
         </div>
       </div>
 
@@ -103,7 +127,7 @@ export function MarketCard({
               "rounded-xs py-2 font-mono text-[13px] font-bold transition-colors",
               side === s ? "text-white" : "text-ink bg-surface",
             )}
-            style={side === s ? { background: s === "yes" ? "var(--color-status-success)" : "var(--color-magenta-60)" } : { border: "1px solid #e5defc" }}
+            style={side === s ? { background: s === "yes" ? "var(--color-status-success)" : "var(--color-magenta-60)" } : { border: `1px solid ${t.border}` }}
           >
             {SIDE_LABEL[s].toUpperCase()} · {pct1(s === "yes" ? market.impliedYes : market.impliedNo)}
           </button>
@@ -111,7 +135,7 @@ export function MarketCard({
       </div>
 
       <div className="mt-2 flex items-center gap-2">
-        <div className="flex items-center rounded-xs bg-surface" style={{ border: "1px solid #e5defc" }}>
+        <div className="flex items-center rounded-xs bg-surface" style={{ border: `1px solid ${t.border}` }}>
           <button className="px-2.5 py-1.5 text-muted" onClick={() => setShares((n) => Math.max(1, n - 5))}>
             <Icon name="remove" size={16} />
           </button>
@@ -137,7 +161,7 @@ export function MarketCard({
 
       <div
         className="mt-2 flex items-center justify-between rounded-xs px-2.5 py-1.5 font-mono text-[10px]"
-        style={{ background: "var(--color-surface)", border: "1px solid #e5defc" }}
+        style={{ background: "var(--color-surface)", border: `1px solid ${t.border}` }}
       >
         <span style={{ color: "var(--color-status-success)" }}>
           win → {money(shares * market.payoutMultiplier)}

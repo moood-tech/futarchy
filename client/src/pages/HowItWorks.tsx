@@ -304,6 +304,18 @@ Authorization: Gateway gw_…:gs_…
 
           {tab === "Markets" && (
             <div className="space-y-6">
+              <div
+                className="flex items-start gap-3 rounded-lg p-4"
+                style={{ background: "var(--color-surface-cream)" }}
+              >
+                <Icon name="info" size={16} className="text-muted shrink-0 mt-0.5" />
+                <p className="text-[13px] text-ink-2">
+                  Conceptual, and a work in progress. The market design described here is not yet a
+                  sound financial structure and is not offered as a product. It will not be until the
+                  mechanism, the incentives, and the regulatory position have been worked out.
+                </p>
+              </div>
+
               <p className="text-muted">
                 The forecast market is a prediction market on the collective's wellbeing index. Stakes
                 are at risk: the correct side takes the losing side's stake.
@@ -448,28 +460,120 @@ a cut of the pot funds the GovFi treasury.`}</Code>
 
           {tab === "Identity" && (
             <div className="space-y-6">
+              <div
+                className="flex items-start gap-3 rounded-lg p-4"
+                style={{ background: "var(--color-surface-cream)" }}
+              >
+                <Icon name="info" size={16} className="text-muted shrink-0 mt-0.5" />
+                <p className="text-[13px] text-ink-2">
+                  Work in progress. The verification and weighting model described here is a design
+                  direction, not a final specification, and the mechanics may change.
+                </p>
+              </div>
+
+              <p className="text-muted">
+                Two properties have to hold at once: every response is <B>anonymous</B>, so identity is
+                never linked to what was submitted, and each real person is <B>unique</B>, so they cannot
+                be counted many times. Anonymity is the standing invariant. Uniqueness is what verification
+                establishes, without breaking anonymity.
+              </p>
+
               <div>
                 <Eyebrow>verification</Eyebrow>
-                <div className="mt-2 space-y-3 text-muted">
-                  <p>
+                <ul className="mt-2 space-y-2 text-[14px] leading-relaxed text-muted list-disc pl-5 marker:text-quiet">
+                  <li>
                     Responses carry no identifier, so the protocol is anonymous by construction. Anonymity
-                    alone is Sybil-vulnerable: a single actor can submit an unbounded number of responses.
-                    moood resolves this with proof of personhood. A provider such as World ID, BrightID, or
-                    Gitcoin Passport attests that a submitter is a distinct human and issues a verification
-                    token. The token certifies uniqueness only; it carries no name, email, or account, and
-                    is not bound to the responses submitted under it, so it establishes that a response
-                    originates from one person without revealing which person.
-                  </p>
+                    on its own is Sybil-vulnerable: one actor can submit an unbounded number of responses.
+                  </li>
+                  <li>
+                    To participate, a user registers an <B>account</B> and verifies it through an{" "}
+                    <B>identity provider</B> such as World ID, BrightID, or Gitcoin Passport.
+                  </li>
+                  <li>
+                    The provider attests that the account belongs to a distinct, real individual and returns
+                    a <B>uniqueness credential</B>. The credential certifies uniqueness only: it carries no
+                    name, email, or wallet, and is not bound to any response.
+                  </li>
+                  <li>
+                    A single provider only guarantees uniqueness within itself. moood integrates every
+                    supported provider and <B>reconciles their attestations against each other</B>, so one
+                    person cannot verify through several providers to open multiple accounts and respond more
+                    than once.
+                  </li>
+                  <li>
+                    Verification binds to the <B>account</B>, not to the response. A verified account still
+                    submits anonymously: the response proves it came from a unique verified person, never
+                    which account sent it, so identity and sentiment are never linked.
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <Eyebrow>blind relay</Eyebrow>
+                <ul className="mt-2 space-y-2 text-[14px] leading-relaxed text-muted list-disc pl-5 marker:text-quiet">
+                  <li>
+                    Responses are never written directly. They pass through a <B>blind relay</B> that
+                    separates who is allowed to respond from what is submitted.
+                  </li>
+                  <li>
+                    Every participant, verified or not, has a <B>user or device id</B>. That id is used to
+                    request a <B>one-time token</B> for a signal; the id is never attached to the response.
+                  </li>
+                  <li>
+                    The token is what the response is submitted with. It works like the identity
+                    attestation at the transport layer: it proves the sender is <B>permitted to respond</B>{" "}
+                    without the relay learning who they are.
+                  </li>
+                  <li>
+                    The token is single-use and signed. The relay accepts one response per token and rejects
+                    replays, so a given id can respond <B>only once</B> to a signal. The relay then records
+                    the response and discards the identifier, so nothing links the id to the sentiment.
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <Eyebrow>weighting</Eyebrow>
+                <div className="mt-2 space-y-3 text-[14px] leading-relaxed text-muted">
                   <p>
-                    A signal can require the token to enforce one response per participant. The index
-                    itself is reported three ways: <B>unverified</B>, counting every response equally;{" "}
-                    <B>verified</B>, counting proof-of-personhood responses only; and <B>weighted</B>, a
-                    trust-weighted blend of the two. The gap between the verified and unverified figures is
-                    diagnostic: a large divergence indicates coordinated or Sybil activity that a single
-                    blended number would conceal.
+                    Every response is anonymous. What differs is whether it carries a uniqueness credential,
+                    and that sets its <B>trust weight</B> in the aggregate. Weight is a function of
+                    verification state, never of content.
+                  </p>
+                  <ul className="space-y-2 list-disc pl-5 marker:text-quiet">
+                    <li>
+                      <B>Verified</B> response, from an account holding a current uniqueness credential:
+                      weight <B>1.0</B>.
+                    </li>
+                    <li>
+                      <B>Unverified</B> response, anonymous with no credential: weight <B>0.25</B>. It still
+                      counts, but four unverified responses move the index as much as one verified response,
+                      which bounds how far a Sybil flood can push it.
+                    </li>
+                  </ul>
+                  <p>The same responses are published at three thresholds, so the reader picks the trust model:</p>
+                  <ul className="space-y-2 list-disc pl-5 marker:text-quiet">
+                    <li>
+                      <B>unverified</B>: every response counted equally, verification ignored. Broadest and
+                      most Sybil-exposed.
+                    </li>
+                    <li>
+                      <B>verified</B>: only responses from verified accounts counted. Narrowest and highest
+                      trust.
+                    </li>
+                    <li>
+                      <B>weighted</B>, the default: all responses counted, each scaled by its trust weight.
+                      With roughly a third of respondents verified this lands near 0.63 verified plus 0.37
+                      unverified.
+                    </li>
+                  </ul>
+                  <p>
+                    The gap between the verified and unverified figures is diagnostic: a large divergence
+                    indicates coordinated or Sybil activity that a single blended number would conceal.
                   </p>
                 </div>
               </div>
+
               <div>
                 <Eyebrow>api usage</Eyebrow>
                 <div className="mt-2">
