@@ -22,7 +22,12 @@ export function WellbeingChart({
   series: IndexPoint[];
   threshold: Threshold;
 }) {
-  const key = threshold === "verified" ? "indexVerified" : "indexNone";
+  const key =
+    threshold === "verified"
+      ? "indexVerified"
+      : threshold === "unverified"
+        ? "indexUnverified"
+        : "indexWeighted";
   const data = series.map((p) => ({
     date: p.date,
     value: p[key],

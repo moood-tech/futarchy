@@ -71,10 +71,12 @@ export interface Group {
 /** One point on a group's aggregate wellbeing index. Aggregate only. */
 export interface IndexPoint {
   date: string; // ISO yyyy-mm-dd
-  /** Index computed counting ALL contributions regardless of verification. */
-  indexNone: number; // 0..100
-  /** Index computed counting only `verified` contributions (trust-weighted). */
+  /** All responses counted equally (Sybil-vulnerable). */
+  indexUnverified: number; // 0..100
+  /** Only proof-of-personhood responses (Sybil-resistant, smaller sample). */
   indexVerified: number; // 0..100
+  /** Trust-weighted blend of the two (verified 1x, unverified 0.25x). */
+  indexWeighted: number; // 0..100
 }
 
 export interface Market {

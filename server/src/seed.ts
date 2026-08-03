@@ -204,9 +204,10 @@ Pods meet at least twice a week.`,
 
 /**
  * Build a weekly index series ending today: a gentle sine-driven baseline plus
- * a seeded random walk. `indexVerified` (trust-weighted) tracks the same shape
- * but is smoother and holds a slightly higher floor, illustrating that verified
- * contributions denoise the signal.
+ * a seeded random walk. The unverified series is the raw, noisier all-response
+ * signal; the verified series is smoother and holds a slightly higher floor
+ * (verified contributions denoise the signal); the weighted series is a
+ * trust-weighted blend of the two (verified 1x, unverified 0.25x).
  */
 function buildSeries(seed: number, weeks: number, center: number): IndexPoint[] {
   const rng = makeRng(seed);
@@ -223,14 +224,16 @@ function buildSeries(seed: number, weeks: number, center: number): IndexPoint[] 
     walk = clamp(walk + (rng() - 0.5) * 6, -14, 14);
     const noise = (rng() - 0.5) * 5;
 
-    const none = clamp(center + season + walk + noise, 5, 95);
+    const unverified = clamp(center + season + walk + noise, 5, 95);
     verifiedEwma = verifiedEwma * 0.7 + (center + season + walk) * 0.3;
     const verified = clamp(verifiedEwma + 2, 5, 95);
+    const weighted = clamp(verified * 0.63 + unverified * 0.37, 5, 95);
 
     points.push({
       date: isoDay(d),
-      indexNone: Math.round(none * 10) / 10,
+      indexUnverified: Math.round(unverified * 10) / 10,
       indexVerified: Math.round(verified * 10) / 10,
+      indexWeighted: Math.round(weighted * 10) / 10,
     });
   }
   return points;

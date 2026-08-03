@@ -114,7 +114,7 @@ function Tile({
 export function Dashboard() {
   const [groups, setGroups] = useState<GroupSummary[]>([]);
   const [groupId, setGroupId] = useState<string>("");
-  const [threshold, setThreshold] = useState<Threshold>("none");
+  const [threshold, setThreshold] = useState<Threshold>("weighted");
   const [index, setIndex] = useState<IndexResponse | null>(null);
   const [proposals, setProposals] = useState<ProposalSummary[]>([]);
 
@@ -150,11 +150,13 @@ export function Dashboard() {
           <Tile
             label="current index"
             hint="A collective's wellbeing index over time, with its current index, 30-day trend, and open signals. The selector holds the collectives you belong to, plus Public for signals not owned by a collective."
-            value={
-              threshold === "verified"
-                ? String(group?.currentIndexVerified ?? "—")
-                : String(group?.currentIndexNone ?? "—")
-            }
+            value={String(
+              (threshold === "verified"
+                ? group?.currentIndexVerified
+                : threshold === "unverified"
+                  ? group?.currentIndexUnverified
+                  : group?.currentIndexWeighted) ?? "—",
+            )}
             sub={
               group ? (
                 <span className="font-mono text-[12px] text-muted">
@@ -203,7 +205,7 @@ export function Dashboard() {
               <div className="flex items-center gap-3">
                 <span className="font-mono text-[11px] text-quiet">trust threshold</span>
                 <div className="segmented">
-                  {(["none", "verified"] as Threshold[]).map((t) => (
+                  {(["unverified", "verified", "weighted"] as Threshold[]).map((t) => (
                     <button
                       key={t}
                       className="seg"

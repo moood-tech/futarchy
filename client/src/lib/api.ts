@@ -1,6 +1,6 @@
 /** Thin typed client for the POC's open protocol API. */
 
-export type Threshold = "none" | "verified";
+export type Threshold = "unverified" | "verified" | "weighted";
 export type Horizon = "1y" | "2y" | "3y" | "5y" | "10y" | "20y" | "30y";
 export type Side = "yes" | "no";
 
@@ -11,8 +11,9 @@ export interface GroupSummary {
   derived: boolean;
   childrenIds: string[];
   documents: { id: string; name: string; path: string }[];
-  currentIndexNone: number;
+  currentIndexUnverified: number;
   currentIndexVerified: number;
+  currentIndexWeighted: number;
   trend30d: number;
   openProposals: number;
   totalResponses: number;
@@ -24,8 +25,9 @@ export interface GroupSummary {
 
 export interface IndexPoint {
   date: string;
-  indexNone: number;
+  indexUnverified: number;
   indexVerified: number;
+  indexWeighted: number;
 }
 
 export interface IndexResponse {
@@ -134,7 +136,7 @@ export const api = {
   index: (groupId: string, threshold: Threshold) =>
     req<IndexResponse>(`/api/index/${groupId}?threshold=${threshold}`),
   contribute: (groupId: string, value: number, verificationToken?: string) =>
-    req<{ level: string; indexNone: number; indexVerified: number }>(
+    req<{ level: string; indexUnverified: number; indexVerified: number; indexWeighted: number }>(
       "/api/contribute",
       { method: "POST", body: JSON.stringify({ groupId, value, verificationToken }) },
     ),

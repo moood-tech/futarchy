@@ -31,9 +31,10 @@ const TRUST_WEIGHT: Record<VerificationLevel, number> = {
 interface LiveAgg {
   allCount: number; // total responses
   verCount: number; // verified responses (~30% of allCount)
-  noneValueSum: number; // Σ value*weight  (all responses)
-  noneWeightSum: number; // Σ weight
-  verValueSum: number; // Σ value          (verified only)
+  unverValueSum: number; // Σ value          (all responses, equal weight)
+  weightedValueSum: number; // Σ value*weight (all responses, trust-weighted)
+  weightedWeightSum: number; // Σ weight
+  verValueSum: number; // Σ value            (verified only)
 }
 
 const live = new Map<string, LiveAgg>();
@@ -54,15 +55,17 @@ export function initLive(): void {
     const last = series[series.length - 1];
 
     const verCount = Math.round(PRIOR_TOTAL * VERIFIED_SHARE); // 60
-    const unverified = PRIOR_TOTAL - verCount; // 140
-    // none-threshold weight mass = verified*1 + unverified*0.25
-    const noneWeightSum = verCount * TRUST_WEIGHT.verified + unverified * TRUST_WEIGHT.none;
+    const unverifiedCount = PRIOR_TOTAL - verCount; // 140
+    // weighted mass = verified*1 + unverified*0.25
+    const weightedWeightSum =
+      verCount * TRUST_WEIGHT.verified + unverifiedCount * TRUST_WEIGHT.none;
 
     live.set(groupId, {
       allCount: PRIOR_TOTAL,
       verCount,
-      noneValueSum: last.indexNone * noneWeightSum,
-      noneWeightSum,
+      unverValueSum: last.indexUnverified * PRIOR_TOTAL,
+      weightedValueSum: last.indexWeighted * weightedWeightSum,
+      weightedWeightSum,
       verValueSum: last.indexVerified * verCount,
     });
   }
@@ -79,8 +82,9 @@ export function verifyToken(token?: string): VerificationLevel {
 
 export interface ContributeResult {
   level: VerificationLevel;
-  indexNone: number;
+  indexUnverified: number;
   indexVerified: number;
+  indexWeighted: number;
 }
 
 /**
@@ -103,8 +107,9 @@ export function contribute(
   const w = TRUST_WEIGHT[level];
 
   agg.allCount += 1;
-  agg.noneValueSum += v * w;
-  agg.noneWeightSum += w;
+  agg.unverValueSum += v;
+  agg.weightedValueSum += v * w;
+  agg.weightedWeightSum += w;
   if (level === "verified") {
     agg.verCount += 1;
     agg.verValueSum += v;
@@ -117,8 +122,9 @@ export function contribute(
   const series = db.index.get(groupId);
   if (series && series.length) {
     const today = series[series.length - 1];
-    today.indexNone = Math.round(result.indexNone * 10) / 10;
+    today.indexUnverified = Math.round(result.indexUnverified * 10) / 10;
     today.indexVerified = Math.round(result.indexVerified * 10) / 10;
+    today.indexWeighted = Math.round(result.indexWeighted * 10) / 10;
   }
 
   return { level, ...result };
@@ -128,35 +134,48 @@ export function contribute(
  * Current aggregate index for a group at both thresholds. For a derived group
  * (Global) this is the response-weighted average across its children.
  */
-export function current(groupId: string): { indexNone: number; indexVerified: number } {
+export function current(groupId: string): {
+  indexUnverified: number;
+  indexVerified: number;
+  indexWeighted: number;
+} {
   const group = db.groups.get(groupId);
   if (!group) throw new Error("unknown group");
 
   if (group.derived) {
     const kids = group.childrenIds ?? [];
-    let noneW = 0;
-    let noneWV = 0; // weighted-by-count index sums
+    let allW = 0;
+    let unverWV = 0; // index sums weighted by response count
+    let wtW = 0;
+    let wtWV = 0;
     let verW = 0;
     let verWV = 0;
     for (const kid of kids) {
       const c = current(kid);
       const s = statsFor(kid);
-      noneW += s.allCount;
-      noneWV += c.indexNone * s.allCount;
+      allW += s.allCount;
+      unverWV += c.indexUnverified * s.allCount;
+      // weighted mass ≈ verified*1 + unverified*0.25
+      const mass =
+        s.verCount * TRUST_WEIGHT.verified + (s.allCount - s.verCount) * TRUST_WEIGHT.none;
+      wtW += mass;
+      wtWV += c.indexWeighted * mass;
       verW += s.verCount;
       verWV += c.indexVerified * s.verCount;
     }
     return {
-      indexNone: noneW > 0 ? noneWV / noneW : 0,
+      indexUnverified: allW > 0 ? unverWV / allW : 0,
       indexVerified: verW > 0 ? verWV / verW : 0,
+      indexWeighted: wtW > 0 ? wtWV / wtW : 0,
     };
   }
 
   const agg = live.get(groupId);
   if (!agg) throw new Error("no aggregate for group");
-  const indexNone = agg.noneValueSum / agg.noneWeightSum;
-  const indexVerified = agg.verCount > 0 ? agg.verValueSum / agg.verCount : indexNone;
-  return { indexNone, indexVerified };
+  const indexUnverified = agg.allCount > 0 ? agg.unverValueSum / agg.allCount : 0;
+  const indexWeighted = agg.weightedWeightSum > 0 ? agg.weightedValueSum / agg.weightedWeightSum : 0;
+  const indexVerified = agg.verCount > 0 ? agg.verValueSum / agg.verCount : indexWeighted;
+  return { indexUnverified, indexVerified, indexWeighted };
 }
 
 /** Response-count stats: total, verified, and verified share. Rolls up children. */
@@ -189,7 +208,12 @@ export function statsFor(groupId: string): {
 }
 
 /** The oracle read: the single index value at the requested trust threshold. */
-export function oracle(groupId: string, threshold: "none" | "verified"): number {
+export function oracle(
+  groupId: string,
+  threshold: "unverified" | "verified" | "weighted",
+): number {
   const c = current(groupId);
-  return threshold === "verified" ? c.indexVerified : c.indexNone;
+  if (threshold === "verified") return c.indexVerified;
+  if (threshold === "unverified") return c.indexUnverified;
+  return c.indexWeighted;
 }
