@@ -12,7 +12,7 @@ const NAV = [
 
 export function Shell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-paper">
+    <div className="min-h-screen bg-paper flex flex-col">
       <header className="border-b" style={{ borderColor: "var(--color-border-hairline)" }}>
         <div className="px-8 h-16 grid grid-cols-[1fr_auto_1fr] items-center">
           {/* Left — logo */}
@@ -63,9 +63,9 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-content px-6 py-8">{children}</main>
-      <footer className="mx-auto max-w-content px-6 py-8">
-        <p className="font-mono text-[11px] text-quiet">© 2026 moood · the emotional interface</p>
+      <main className="mx-auto w-full max-w-content px-6 py-8 flex-1">{children}</main>
+      <footer className="px-6 py-8">
+        <p className="font-mono text-[11px] text-quiet text-center">© 2026 moood · the emotional interface</p>
       </footer>
     </div>
   );
