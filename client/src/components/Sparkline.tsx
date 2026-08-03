@@ -1,7 +1,13 @@
 import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
 
 /** Tiny implied-probability history line for a market. */
-export function Sparkline({ history }: { history: { t: number; yes: number }[] }) {
+export function Sparkline({
+  history,
+  stroke = "#5a2dbf",
+}: {
+  history: { t: number; yes: number }[];
+  stroke?: string;
+}) {
   const data = history.map((h, i) => ({ i, yes: h.yes * 100 }));
   return (
     <ResponsiveContainer width="100%" height={44}>
@@ -10,7 +16,7 @@ export function Sparkline({ history }: { history: { t: number; yes: number }[] }
         <Line
           type="monotone"
           dataKey="yes"
-          stroke="#5a2dbf"
+          stroke={stroke}
           strokeWidth={1.75}
           dot={false}
           isAnimationActive={false}

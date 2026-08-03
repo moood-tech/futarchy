@@ -18,6 +18,11 @@
   html {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* Always reserve the scrollbar gutter so short pages (How it works) and
+       tall ones (Dashboard/Signals/Motions) have the same content width. The
+       native scrollbar only paints when there is overflow, so it reads as an
+       invisible track until needed, and the nav never shifts on navigation. */
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-paper text-ink font-body;
