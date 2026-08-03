@@ -24,6 +24,24 @@ function Step({ n, title, children }: { n: string; title: string; children: Reac
   );
 }
 
+/** Like Step but lettered (a, b, c…) — for a set of features rather than a sequence. */
+function Feature({ letter, title, children }: { letter: string; title: string; children: ReactNode }) {
+  return (
+    <div className="flex gap-4">
+      <div
+        className="shrink-0 w-9 h-9 rounded-xs grid place-items-center font-mono text-[13px] font-bold"
+        style={{ background: "var(--color-emphasis-bg-deep)", color: "var(--color-emphasis-text)" }}
+      >
+        {letter}
+      </div>
+      <div>
+        <h3 className="font-heading text-[17px] font-semibold">{title}</h3>
+        <div className="mt-1 space-y-3 text-[14px] leading-relaxed text-muted">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 function Code({ children }: { children: ReactNode }) {
   return (
     <pre
@@ -177,23 +195,10 @@ export function HowItWorks() {
                   </p>
                 </Step>
                 <Step n="5" title="Markets">
-                  <p>
-                    A market is a prediction market on a collective's wellbeing index, the metric futarchy
-                    optimises. For a signal carrying a motion or pulse, it forecasts the index conditional
-                    on that signal across horizons from 1 to 30 years, and the price is the market's
-                    estimate of the signal's long-term effect on the index.
-                  </p>
-                  <p>
-                    Optimising a single collective's index has a failure mode. The decision rule sees only
-                    that one metric, so a motion that raises the proposing collective's index at the expense
-                    of people outside it still clears the market. The price is efficient; the objective is
-                    misspecified. It internalises the proposer's welfare and prices the externality at zero.
-                    moood runs the forecast on two metrics instead: each motion carries an{" "}
-                    <B>internal market</B> on the proposing collective's index and an <B>external market</B>{" "}
-                    on the wellbeing index of the population it affects. Weighted by population, the two
-                    approximate the change in total welfare, so a motion that is a gain for the collective
-                    but a net loss overall is legible rather than rewarded.
-                  </p>
+                  A market is a prediction market on a collective's wellbeing index, the metric futarchy
+                  optimises. For a signal carrying a motion or pulse, it forecasts the index conditional on
+                  that signal across horizons from 1 to 30 years, and the price is the market's estimate of
+                  the signal's long-term effect on the index.
                 </Step>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
@@ -219,44 +224,81 @@ export function HowItWorks() {
           {tab === "Signals" && (
             <div className="space-y-6">
               <p className="text-muted">
-                A motion is a question or proposal. Its signals are the feedback on it: sentiment about
-                the motion itself, and a forecast market on the owning collective's long-term wellbeing
-                index. Each runs for a window, then closes.
+                A signal is a collective's aggregated sentiment on one subject: an anonymous tally of
+                positive and negative responses. It records only the aggregate, never a per-response
+                identity.
               </p>
-              <Step n="1" title="Baseline: the wellbeing index">
-                Anonymous daily sentiment aggregates into a 0 to 100 wellbeing index, tracked over time.
-                It is the baseline every motion is measured against.
-              </Step>
-              <Step n="2" title="Motion sentiment">
-                How the collective feels about the motion itself, now: an anonymous aggregate of positive
-                and negative responses. Nothing is stored about who responded.
-              </Step>
-              <Step n="3" title="Forecast market">
-                A market on the collective's long-term wellbeing index under the motion, over horizons
-                from 1 to 30 years. See Markets.
-              </Step>
-              <Step n="4" title="Signal window">
-                Each signal has a start and an end. When it closes, the readings settle. The window maps
-                to a moood pulse when dispatched to a linked collective.
-              </Step>
-              <Step n="5" title="Resolution and disputes (planned)">
-                After close, the forecast market resolves and stakes settle. Disputes hold funds in
-                escrow while arbitrators handle edge cases, for example a collective that ends before a
-                long horizon.
-              </Step>
-              <Step n="6" title="Advisory or binding">
-                A signal is advisory by default. It can be set to binding: on close it triggers a smart
-                contract that executes the motion, on the sentiment result, the market outcome, or both.
-              </Step>
+              <Feature letter="a" title="Trust thresholds">
+                The reading is reported three ways: unverified, counting every response equally; verified,
+                counting proof-of-personhood responses only; and weighted, a trust-weighted blend of the
+                two.
+              </Feature>
+              <Feature letter="b" title="Windowed lifecycle">
+                A signal opens at a start time, accepts responses while open, and closes at an end time,
+                at which point the reading settles.
+              </Feature>
+              <Feature letter="c" title="Advisory or binding">
+                A signal is advisory by default. Set to binding, closing it triggers a smart contract that
+                executes on the result.
+              </Feature>
 
-              <div className="rounded-lg p-5" style={{ background: "var(--color-surface-cream)" }}>
-                <Eyebrow>technicals</Eyebrow>
-                <ul className="mt-2 space-y-1.5 text-[13px] text-ink-2">
-                  <li>Sentiment is collected through a blind relay with one-time HMAC tokens.</li>
-                  <li>The forecast market uses an LMSR automated market maker.</li>
-                  <li>Uniqueness comes from a proof-of-personhood provider (World ID, BrightID, Gitcoin Passport).</li>
-                </ul>
+              <div>
+                <Eyebrow>api usage</Eyebrow>
+                <div className="mt-2 space-y-5 text-[13px] text-muted">
+                  <div className="space-y-2">
+                    <p>Import a signal from a DAO. Its voting window becomes the signal window.</p>
+                    <Code>{`GET /api/sync/{platform}/motions/{motionId}
+Authorization: Gateway gw_…:gs_…
+
+200 OK
+{
+  "title": "…",
+  "url": "https://…",
+  "votingStart": 1785450000000,   // becomes the signal window
+  "votingEnd": 1785970000000
+}`}</Code>
+                  </div>
+                  <div className="space-y-2">
+                    <p>Get a one-time, identity-stripped blind token to respond to a signal.</p>
+                    <Code>{`POST /api/signals/{signalId}/token
+Authorization: Gateway gw_…:gs_…
+
+{ "verifiedToken": "vp_…" }   // optional: one response per person
+
+200 OK
+{ "blindToken": "bt_…" }   // one-time, identity-stripped`}</Code>
+                  </div>
+                  <div className="space-y-2">
+                    <p>
+                      Submit a response with the blind token. A relay records it without knowing who sent
+                      it; a non-response defaults to 0, which counts as positive.
+                    </p>
+                    <Code>{`POST /api/sentiment
+
+{
+  "blindToken": "bt_…",
+  "mood": {
+    "signalId": "sig_…",
+    "mood": 1,          // 1 positive, -1 negative, 0 no response
+    "timestamp": 1785450000000
+  }
+}
+
+200 OK
+{ "accepted": true }`}</Code>
+                  </div>
+                </div>
               </div>
+
+              <Card className="p-5">
+                <Eyebrow>spam protection</Eyebrow>
+                <ul className="mt-2 space-y-1.5 text-[13px] text-muted">
+                  <li>Calls come only from verified partner gateways, each with its own credentials.</li>
+                  <li>The blind token is one-time and signed, so a response cannot be replayed.</li>
+                  <li>Unverified responses carry less weight, so a flood barely moves the verified index.</li>
+                  <li>Rate limiting and bot detection sit in front of the API.</li>
+                </ul>
+              </Card>
             </div>
           )}
 
@@ -267,29 +309,48 @@ export function HowItWorks() {
                 are at risk: the correct side takes the losing side's stake.
               </p>
 
-              <Step n="1" title="Two sides, one metric">
+              <div>
+                <Eyebrow>internal and external markets</Eyebrow>
+                <div className="mt-2 space-y-3 text-[14px] leading-relaxed text-muted">
+                  <p>
+                    Optimising a single collective's index has a failure mode. The decision rule sees only
+                    that one metric, so a motion that raises the proposing collective's index at the expense
+                    of people outside it still clears the market. The price is efficient; the objective is
+                    misspecified. It internalises the proposer's welfare and prices the externality at zero.
+                  </p>
+                  <p>
+                    moood runs the forecast on two metrics instead. Each motion carries an{" "}
+                    <B>internal market</B> on the proposing collective's index and an <B>external market</B>{" "}
+                    on the wellbeing index of the population it affects. Weighted by population, the two
+                    approximate the change in total welfare, so a motion that is a gain for the collective
+                    but a net loss overall is legible rather than rewarded.
+                  </p>
+                </div>
+              </div>
+
+              <Feature letter="a" title="Two sides, one metric">
                 Back positive that the motion raises the wellbeing index, or negative that it does not.
                 At resolution the correct side takes the wrong side's stakes.
-              </Step>
-              <Step n="2" title="Mover-funded subsidy">
+              </Feature>
+              <Feature letter="b" title="Mover-funded subsidy">
                 Whoever raises the motion fronts a subsidy, added to the pot; it pays informed
                 forecasters and is the mover's commitment. Shared markets, like the wellbeing index
                 itself, are funded by the GovFi treasury.
-              </Step>
-              <Step n="3" title="Tradeable any time">
+              </Feature>
+              <Feature letter="c" title="Tradeable any time">
                 Positions can be sold back to the market maker as the forecast moves, so you can exit
                 before resolution rather than hold to the end.
-              </Step>
-              <Step n="4" title="LMSR pricing">
+              </Feature>
+              <Feature letter="d" title="LMSR pricing">
                 An automated market maker prices each side between 0 and 100 percent, read as the live
                 probability the motion raises the index. The price is a token's cost and its claim on
                 the pot.
-              </Step>
-              <Step n="5" title="Horizon payouts">
+              </Feature>
+              <Feature letter="e" title="Horizon payouts">
                 Stakes sit in escrow and earn a baseline rate for the term, so longer horizons pay more:
                 the payout is grossed up by that rate compounded over the horizon. It compensates for the
                 time capital is locked, not a floor.
-              </Step>
+              </Feature>
 
               <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--color-border-hairline)" }}>
                 <table className="w-full text-[13px]">
@@ -324,14 +385,14 @@ export function HowItWorks() {
                 // payout = (1 + 0.05) ^ years · the baseline rate compounded over the term
               </p>
 
-              <Step n="6" title="Treasury cut">
+              <Feature letter="f" title="Treasury cut">
                 A portion of the upside funds the GovFi treasury, which funds the shared markets that no
                 single collective would pay for.
-              </Step>
-              <Step n="7" title="Disputes settle from escrow (planned)">
+              </Feature>
+              <Feature letter="g" title="Disputes settle from escrow (planned)">
                 If a market ends early, arbitrators settle at the interest earned so far or refund the
                 stake. Funds stay in escrow throughout.
-              </Step>
+              </Feature>
 
               <div className="rounded-lg p-4" style={{ background: "var(--color-surface-cream)" }}>
                 <Eyebrow>optional · growth reserve</Eyebrow>
@@ -365,156 +426,93 @@ a cut of the pot funds the GovFi treasury.`}</Code>
           {tab === "Motions" && (
             <div className="space-y-6">
               <p className="text-muted">
-                A motion is a change or a question put to a collective. It can edit the collective's
-                documents, or be a question with no document change.
+                A motion is a proposal or question put to a collective.
               </p>
-              <Step n="1" title="Each collective has governing documents">
-                A collective owns a document set: a constitution, contracts, policies. A document motion
-                edits one of them.
-              </Step>
-              <Step n="2" title="Edit one or several documents">
-                A motion can change a single document or several at once, or be title-only (a question).
-              </Step>
-              <Step n="3" title="Reviewed as a diff">
-                A document motion is reviewed as a before/after diff, the current text against the
-                proposed, like a pull request.
-              </Step>
-              <Step n="4" title="Publishing opens signaling">
-                Publishing a motion opens its signals: motion sentiment and, if enabled, a forecast
-                market.
-              </Step>
-              <Step n="5" title="Or synced from a DAO">
-                A motion can be synced from DAO governance (Snapshot, Tally, Aragon, MakerDAO, ENS). It
-                arrives read-only, opens signals, and links back to the source. The DAO proposal's voting
-                window becomes the signal window.
-              </Step>
-
-              <div className="rounded-lg p-5" style={{ background: "var(--color-surface-cream)" }}>
-                <Eyebrow>technicals</Eyebrow>
-                <ul className="mt-2 space-y-1.5 text-[13px] text-ink-2">
-                  <li>Documents are versioned with git, so motions and their changes are tracked over time.</li>
-                </ul>
-              </div>
+              <Feature letter="a" title="Documents">
+                Motions support supplemental documents, which can be included as changes in the proposal.
+                Documents can also be motioned on directly: a collective connects a <B>git repository</B>{" "}
+                of <B>markdown files</B>, and a motion selects one or more of them to change. With no
+                documents, a motion is a title-only question.
+              </Feature>
+              <Feature letter="b" title="Change management">
+                Every motion is handled as a set of <B>version-controlled</B> changes rather than a
+                free-form edit. The proposed edits are
+                presented as a <B>diff</B> of the current text against the motion's version, in the same
+                way that a <B>pull request</B> shows a change for review before it is merged. When a motion
+                is settled its edits are <B>committed</B>, so the repository retains the{" "}
+                <B>full history</B> of how each document has evolved and any earlier state remains
+                recoverable.
+              </Feature>
             </div>
           )}
 
           {tab === "Identity" && (
             <div className="space-y-6">
-              <p className="text-muted">
-                Responses are anonymous, but anonymity alone is gameable: one actor could submit
-                thousands. Verification proves each response is one unique person, without revealing who.
-              </p>
-              <Step n="1" title="Verify once, anonymously">
-                A proof-of-personhood provider (World ID, BrightID, Gitcoin Passport) confirms you are a
-                unique person and returns a token. No name, email, or account.
-              </Step>
-              <Step n="2" title="The token proves uniqueness only">
-                It asserts one verified person, nothing about who, and is not linked to your responses.
-              </Step>
-              <Step n="3" title="Used for one-per-person and weighting">
-                A signal can require the token so each person responds once, and can weight verified
-                responses higher.
-              </Step>
-              <Code>{`POST /api/verify   // via a proof-of-personhood provider
+              <div>
+                <Eyebrow>verification</Eyebrow>
+                <div className="mt-2 space-y-3 text-muted">
+                  <p>
+                    Responses carry no identifier, so the protocol is anonymous by construction. Anonymity
+                    alone is Sybil-vulnerable: a single actor can submit an unbounded number of responses.
+                    moood resolves this with proof of personhood. A provider such as World ID, BrightID, or
+                    Gitcoin Passport attests that a submitter is a distinct human and issues a verification
+                    token. The token certifies uniqueness only; it carries no name, email, or account, and
+                    is not bound to the responses submitted under it, so it establishes that a response
+                    originates from one person without revealing which person.
+                  </p>
+                  <p>
+                    A signal can require the token to enforce one response per participant. The index
+                    itself is reported three ways: <B>unverified</B>, counting every response equally;{" "}
+                    <B>verified</B>, counting proof-of-personhood responses only; and <B>weighted</B>, a
+                    trust-weighted blend of the two. The gap between the verified and unverified figures is
+                    diagnostic: a large divergence indicates coordinated or Sybil activity that a single
+                    blended number would conceal.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <Eyebrow>api usage</Eyebrow>
+                <div className="mt-2">
+                  <Code>{`POST /api/verify
 
 200 OK
 { "verifiedToken": "vp_…" }   // proves uniqueness, not identity`}</Code>
+                </div>
+              </div>
             </div>
           )}
 
           {tab === "API" && (
             <div className="space-y-5">
               <p className="text-muted">
-                Partners submit responses on behalf of their users through a gateway. Each call is one
-                anonymous response; a one-time blind token strips identity before it is recorded.
-                Pre-production is self-service, production is granted on request.
+                Partners submit responses on behalf of their users through a gateway. Every gateway call
+                is authenticated with the partner's gateway id and secret (
+                <code className="font-mono">Authorization: Gateway gw_…:gs_…</code>). Register for a
+                gateway to obtain them.
               </p>
 
-              <div>
-                <Eyebrow>register as a partner · pre-prod</Eyebrow>
-                <p className="mb-2 text-[13px] text-muted">
-                  Self-service registration is for the pre-production environment only, against pre-prod
-                  data. It issues a pre-prod gateway.
+              <div
+                className="flex items-start gap-3 rounded-lg p-4"
+                style={{ background: "var(--color-surface-cream)" }}
+              >
+                <Icon name="info" size={16} className="text-muted shrink-0 mt-0.5" />
+                <p className="text-[13px] text-ink-2">
+                  Production is not self-service. Request access from support@moood.tech.
                 </p>
-                <Code>{`POST /api/partners   // pre-production only
+              </div>
+
+              <div className="space-y-2">
+                <Eyebrow>api usage</Eyebrow>
+                <p className="text-[13px] text-muted">
+                  Register a partner to obtain a gateway id and secret.
+                </p>
+                <Code>{`POST /api/partners
 
 { "name": "Acme app", "contact": "dev@acme.io" }
 
 200 OK
 { "gatewayId": "gw_…", "gatewaySecret": "gs_…", "env": "preprod" }`}</Code>
               </div>
-
-              <div className="rounded-lg p-4" style={{ background: "var(--color-surface-cream)" }}>
-                <Eyebrow>production access</Eyebrow>
-                <p className="mt-2 text-[13px] text-ink-2">
-                  Production is not self-service. Request access from support@moood.tech.
-                </p>
-              </div>
-
-              <div>
-                <Eyebrow>sync a dao motion</Eyebrow>
-                <Code>{`GET /api/sync/{platform}/motions/{motionId}
-Authorization: Gateway gw_…:gs_…
-
-200 OK
-{
-  "title": "…",
-  "url": "https://…",
-  "votingStart": 1785450000000,   // becomes the signal window
-  "votingEnd": 1785970000000
-}`}</Code>
-                <p className="mt-2 text-[13px] text-muted">
-                  The imported motion opens signals, and its voting window becomes the signal window.
-                </p>
-              </div>
-
-              <div>
-                <Eyebrow>get a blind token</Eyebrow>
-                <Code>{`POST /api/signals/{signalId}/token
-Authorization: Gateway gw_…:gs_…
-
-{ "verifiedToken": "vp_…" }   // optional: one response per person
-
-200 OK
-{ "blindToken": "bt_…" }   // one-time, identity-stripped`}</Code>
-              </div>
-
-              <div>
-                <Eyebrow>submit one response</Eyebrow>
-                <Code>{`POST /api/sentiment
-
-{
-  "blindToken": "bt_…",
-  "mood": {
-    "signalId": "sig_…",
-    "mood": 1,          // 1 positive, -1 negative, 0 no response
-    "timestamp": 1785450000000
-  }
-}
-
-200 OK
-{ "accepted": true }`}</Code>
-              </div>
-
-              <p className="text-[13px] text-muted">
-                A relay verifies the token and records the response without knowing who sent it. A
-                non-response defaults to 0, which counts as positive when the signal aggregates.
-              </p>
-
-              <div>
-                <Eyebrow>spam protection</Eyebrow>
-                <ul className="mt-2 space-y-1.5 text-[13px] text-muted">
-                  <li>Calls come only from verified partner gateways, each with its own credentials.</li>
-                  <li>The blind token is one-time and signed, so a response cannot be replayed.</li>
-                  <li>A verified token limits each person to one response per signal.</li>
-                  <li>Unverified responses carry less weight, so a flood barely moves the verified index.</li>
-                  <li>Rate limiting and bot detection sit in front of the API.</li>
-                </ul>
-              </div>
-
-              <p className="font-mono text-[10px] text-quiet">
-                // wireframe · sentiment ingestion, one response per person, identity stripped by the relay
-              </p>
             </div>
           )}
         </div>
