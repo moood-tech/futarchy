@@ -80,6 +80,13 @@ export interface IndexPoint {
 export interface Market {
   id: string;
   proposalId: string;
+  /**
+   * Which wellbeing index this market forecasts: `internal` = the proposing
+   * collective's own index; `external` = the wider public's. A motion carries
+   * one set of each so cross-group externalities are priced. See the externality
+   * note in How It Works.
+   */
+  scope: "internal" | "external";
   horizon: Horizon;
   years: number;
   lmsr: LmsrState;

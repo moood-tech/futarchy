@@ -19,6 +19,7 @@ export function marketView(m: Market) {
   const p = prices(m.lmsr);
   return {
     id: m.id,
+    scope: m.scope,
     horizon: m.horizon,
     years: m.years,
     baselineRate: BASELINE_RATE,
@@ -36,8 +37,8 @@ export function marketView(m: Market) {
 /** A one-line read of a proposal's two signals, for list cards. */
 export function proposalSummary(p: Proposal) {
   const markets = marketsForProposal(p.id);
-  // "Market lean" = the 1y implied P(yes) as the headline forecast.
-  const oneYear = markets.find((m) => m.horizon === "1y");
+  // "Market lean" = the internal market's 1y implied P(yes) as the headline forecast.
+  const oneYear = markets.find((m) => m.horizon === "1y" && m.scope === "internal");
   const marketLean = oneYear ? prices(oneYear.lmsr).yes : 0.5;
 
   const total = p.pulse.positive + p.pulse.negative;
