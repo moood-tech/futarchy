@@ -449,7 +449,9 @@ export function ProposalEdit() {
   const [end, setEnd] = useState("");
   const [changes, setChanges] = useState<DocChange[]>([]);
   const [tradingEnabled, setTradingEnabled] = useState(true);
-  const [naked, setNaked] = useState(false);
+  // A signal is a motion when it has document changes, else a naked sentiment
+  // signal. Derived from the documents rather than a manual toggle.
+  const naked = changes.length === 0;
   const [busy, setBusy] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [tab, setTab] = useState<"details" | "documents" | "comments">("details");
@@ -536,7 +538,6 @@ export function ProposalEdit() {
     setEnd(toLocalInput(p.signalEnd));
     setChanges(p.changes.map((c) => ({ ...c })));
     setTradingEnabled(p.tradingEnabled);
-    setNaked(p.naked);
   }
 
   const dirty =
@@ -844,7 +845,7 @@ export function ProposalEdit() {
             <button className="seg" data-active={tab === "details"} onClick={() => setTab("details")}>
               Details
             </button>
-            {!naked && (
+            {(changes.length > 0 || editMode) && (
               <button className="seg" data-active={tab === "documents"} onClick={() => setTab("documents")}>
                 Documents{changes.length ? ` (${changes.length})` : ""}
               </button>
@@ -975,13 +976,6 @@ export function ProposalEdit() {
                     on={tradingEnabled}
                     disabled={!canEditMeta}
                     onChange={setTradingEnabled}
-                  />
-                  <Toggle
-                    label="Motion"
-                    hint="Attach document changes. Off makes it a naked sentiment signal."
-                    on={!naked}
-                    disabled={!canEditMeta}
-                    onChange={(v) => setNaked(!v)}
                   />
                 </div>
               </div>
