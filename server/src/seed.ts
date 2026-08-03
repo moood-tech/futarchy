@@ -236,10 +236,11 @@ function buildSeries(seed: number, weeks: number, center: number): IndexPoint[] 
   return points;
 }
 
-function makeMarkets(proposalId: string): Market[] {
+function makeMarkets(proposalId: string, scope: "internal" | "external"): Market[] {
   return HORIZONS.map(({ key, years }) => ({
     id: nextId("mkt"),
     proposalId,
+    scope,
     horizon: key,
     years,
     lmsr: { b: 100, qYes: 0, qNo: 0 },
@@ -306,6 +307,10 @@ export function seed(): void {
     { id: "plr_margaret", handle: "margaret" },
   ];
   for (const mp of mockPlayers) getOrCreatePlayer(mp.id, mp.handle);
+  // Seed trades are a fixed count per market, and there are now two market sets
+  // (internal + external) per motion. Give the seed traders a deep balance so
+  // every seed trade lands; their cash is reset to STARTING_BALANCE afterward.
+  for (const mp of mockPlayers) getOrCreatePlayer(mp.id).balance = 100_000_000;
 
   // ── Proposals ─────────────────────────────────────────────────────────────
   const DURATIONS: Record<string, number> = {
@@ -315,6 +320,7 @@ export function seed(): void {
     prop_fourday: 60,
     prop_office: 30,
     prop_rnd_profit: 45,
+    prop_relocate: 60,
     prop_sabbatical: 90,
     prop_community_mod: 30,
     prop_company_async: 30,
@@ -333,6 +339,10 @@ export function seed(): void {
       // (e.g. fine now, heavily bearish by year 5). Falls back to seedLean +
       // pull-to-50/50 for any horizon not listed.
       horizonLeans?: Partial<Record<Horizon, number>>;
+      // The external market (effect on the wider public's index). When omitted,
+      // the external market mirrors the internal one (an aligned scenario).
+      externalSeedLean?: number;
+      externalHorizonLeans?: Partial<Record<Horizon, number>>;
       tradingEnabled?: boolean; // default true
       naked?: boolean; // default false
     }
@@ -372,6 +382,7 @@ export function seed(): void {
       ageDays: 3,
       pulse: { positive: 1240, negative: 85 },
       seedLean: 0.9,
+      externalSeedLean: 0.84, // aligned: good for the collective and the public
     },
     {
       id: "prop_public_mhdays",
@@ -417,6 +428,7 @@ export function seed(): void {
       ageDays: 5,
       pulse: { positive: 71, negative: 121 },
       seedLean: 0.37,
+      externalSeedLean: 0.52, // divergent: weak for the company, roughly neutral for the public
     },
     {
       id: "prop_rnd_profit",
@@ -432,6 +444,20 @@ export function seed(): void {
       // Staff want it now (high sentiment), but the market turns heavily bearish
       // from year five onward as the lost R&D investment is priced in.
       horizonLeans: { "1y": 0.5, "2y": 0.4, "3y": 0.29, "5y": 0.12, "10y": 0.08, "20y": 0.06, "30y": 0.05 },
+      externalSeedLean: 0.14, // aligned negative: cutting R&D also drags on the wider public
+    },
+    {
+      id: "prop_relocate",
+      groupId: "grp_company",
+      source: { kind: "builtin" },
+      title: "Relocate operations to a lower-cost region",
+      description:
+        "Move core operations to cut costs and lift margins. The market expects this to help the company while pulling jobs and spending out of the current community.",
+      owner: "Company Beta · Strategy",
+      ageDays: 3,
+      pulse: { positive: 104, negative: 68 },
+      seedLean: 0.73, // internal: good for the company
+      externalSeedLean: 0.14, // polar opposite: bad for the wider public
     },
     {
       id: "prop_sabbatical",
@@ -529,11 +555,11 @@ export function seed(): void {
     // Sentiment-only signals (trading off, e.g. the daily check-in) have no market.
     if (!tradingEnabled) continue;
 
-    const markets = makeMarkets(p.id);
-    for (const m of markets) db.markets.set(m.id, m);
-
-    // Seed a few trades per market so prices sit near seedLean (with the longer
-    // horizons a touch more uncertain, i.e. pulled back toward 50/50).
+    // Seed a few trades per market so prices sit near the target lean (longer
+    // horizons a touch more uncertain, i.e. pulled back toward 50/50). Each
+    // motion carries two market sets: internal (the collective's own index) and
+    // external (the wider public's). With no external lean given, the external
+    // market mirrors the internal one (an aligned scenario).
     const horizonPull: Record<Horizon, number> = {
       "1y": 0,
       "2y": 0.15,
@@ -543,30 +569,47 @@ export function seed(): void {
       "20y": 0.72,
       "30y": 0.8,
     };
-    for (const m of markets) {
-      const target =
-        p.horizonLeans?.[m.horizon] ??
-        p.seedLean + (0.5 - p.seedLean) * horizonPull[m.horizon];
-      // More trades the further the target sits from 50/50, so extreme,
-      // confident markets actually reach their target rather than undershoot.
-      const rounds = 5 + Math.floor(rng() * 4) + Math.round(Math.abs(0.5 - target) * 26);
-      for (let i = 0; i < rounds; i++) {
-        const current = m.lmsr.qYes; // proxy; recompute via prices below
-        const impliedYes =
-          Math.exp(m.lmsr.qYes / m.lmsr.b) /
-          (Math.exp(m.lmsr.qYes / m.lmsr.b) + Math.exp(m.lmsr.qNo / m.lmsr.b));
-        const side = impliedYes < target ? "yes" : "no";
-        const shares = 8 + Math.floor(rng() * 22);
-        const player = mockPlayers[Math.floor(rng() * mockPlayers.length)];
-        try {
-          buyShares(m, player.id, side, shares, proposal.createdAt + i * 3_600_000);
-        } catch {
-          // Player ran low on play-money; skip this seed trade.
+    const hasExternal =
+      p.externalSeedLean !== undefined || p.externalHorizonLeans !== undefined;
+    const scopes = [
+      { scope: "internal" as const, lean: p.seedLean, horizonLeans: p.horizonLeans },
+      hasExternal
+        ? {
+            scope: "external" as const,
+            lean: p.externalSeedLean ?? p.seedLean,
+            horizonLeans: p.externalHorizonLeans,
+          }
+        : { scope: "external" as const, lean: p.seedLean, horizonLeans: p.horizonLeans },
+    ];
+    for (const s of scopes) {
+      const markets = makeMarkets(p.id, s.scope);
+      for (const m of markets) db.markets.set(m.id, m);
+      for (const m of markets) {
+        const target =
+          s.horizonLeans?.[m.horizon] ??
+          s.lean + (0.5 - s.lean) * horizonPull[m.horizon];
+        // More trades the further the target sits from 50/50, so extreme,
+        // confident markets actually reach their target rather than undershoot.
+        const rounds = 5 + Math.floor(rng() * 4) + Math.round(Math.abs(0.5 - target) * 26);
+        for (let i = 0; i < rounds; i++) {
+          const impliedYes =
+            Math.exp(m.lmsr.qYes / m.lmsr.b) /
+            (Math.exp(m.lmsr.qYes / m.lmsr.b) + Math.exp(m.lmsr.qNo / m.lmsr.b));
+          const side = impliedYes < target ? "yes" : "no";
+          const shares = 8 + Math.floor(rng() * 22);
+          const player = mockPlayers[Math.floor(rng() * mockPlayers.length)];
+          try {
+            buyShares(m, player.id, side, shares, proposal.createdAt + i * 3_600_000);
+          } catch {
+            // Player ran low on play-money; skip this seed trade.
+          }
         }
-        void current;
       }
     }
   }
+
+  // Reset the seed traders' cash so the leaderboard starts from a normal balance.
+  for (const mp of mockPlayers) getOrCreatePlayer(mp.id).balance = STARTING_BALANCE;
 
   const totalTrades = db.trades.length;
   const totalPoints = [...db.index.values()].reduce((n, s) => n + s.length, 0);

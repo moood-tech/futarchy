@@ -41,7 +41,7 @@ const B = ({ children }: { children: ReactNode }) => (
 
 /**
  * A live, clickable reference card for moood's daily sentiment signal
- * ("How are you feeling?") — the naked baseline signal every wellbeing index is
+ * ("How are you feeling?"), the naked baseline signal every wellbeing index is
  * built from. Rendered inside the Overview so the reader can see the real thing.
  */
 function DailySignalCard() {
@@ -55,7 +55,7 @@ function DailySignalCard() {
   const total = sig.pulse.positive + sig.pulse.negative;
 
   return (
-    <Link to={`/signals/${sig.id}`} className="block max-w-sm">
+    <Link to={`/signals/${sig.id}`} className="block max-w-sm mx-auto">
       <Card className="p-4 hover:shadow-lg transition-shadow" style={{ background: "var(--color-surface-soft)" }}>
         <MarqueePills>
           <span className="inline-flex" style={{ color: "var(--color-text-quiet)" }}>
@@ -63,7 +63,7 @@ function DailySignalCard() {
           </span>
           <Pill tone={sig.status === "open" ? "green" : "grey"}>{sig.status}</Pill>
           <SourceBadge source={sig.source} />
-          {sig.owner && <Pill tone="grey">owned by {sig.owner}</Pill>}
+          {sig.owner && <Pill tone="grey">{sig.owner}</Pill>}
         </MarqueePills>
 
         <div className="mt-2 flex items-center gap-2">
@@ -71,34 +71,20 @@ function DailySignalCard() {
           <Pill tone="red">Baseline Signal</Pill>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          {/* Predicted — greyed out: a baseline signal has no market. */}
-          <div className="opacity-40">
-            <div className="flex items-center justify-between font-mono text-[11px] text-muted">
-              <span>predicted (1y)</span>
-              <span>00%</span>
-            </div>
-            <div className="mt-1">
-              <SplitBar left={0} leftColor="var(--color-text-quiet)" rightColor="var(--color-brand-hairline)" />
-            </div>
-            <div className="mt-1 font-mono text-[10px] text-quiet">P(wellbeing up)</div>
+        {/* Baseline signal has no market, so sentiment spans the full width. */}
+        <div className="mt-3">
+          <div className="flex items-center justify-between font-mono text-[11px] text-muted">
+            <span>sentiment now</span>
+            <span className="text-ink font-semibold">{pct(sig.sentimentPositive)}</span>
           </div>
-
-          {/* Sentiment — live. */}
-          <div>
-            <div className="flex items-center justify-between font-mono text-[11px] text-muted">
-              <span>sentiment now</span>
-              <span className="text-ink font-semibold">{pct(sig.sentimentPositive)}</span>
-            </div>
-            <div className="mt-1">
-              <SplitBar
-                left={sig.sentimentPositive}
-                leftColor="var(--color-emphasis-text-alt)"
-                rightColor="var(--color-brand-hairline)"
-              />
-            </div>
-            <div className="mt-1 font-mono text-[10px] text-quiet">{total.toLocaleString()} responses</div>
+          <div className="mt-1">
+            <SplitBar
+              left={sig.sentimentPositive}
+              leftColor="var(--color-emphasis-text-alt)"
+              rightColor="var(--color-brand-hairline)"
+            />
           </div>
+          <div className="mt-1 font-mono text-[10px] text-quiet">{total.toLocaleString()} responses</div>
         </div>
       </Card>
     </Link>
@@ -134,52 +120,79 @@ export function HowItWorks() {
         <div className="space-y-6">
           {tab === "Overview" && (
             <div className="space-y-6">
-              <p className="text-muted">
-                moood GovFi is a portal for raising motions within a collective and tracking their
-                effect on its wellbeing over time.
-              </p>
-              <div className="space-y-6">
-                <Step n="1" title="Futarchy">
-                  Futarchy is a governance model, proposed by the economist Robin Hanson, that assigns
-                  two decisions to two different mechanisms. A group uses <B>voting</B> to choose the
-                  metric that defines success, and <B>prediction markets</B> to choose the actions taken
-                  to improve it. For each proposal, a market predicts the value the metric would take if
-                  that proposal were adopted, and the proposal with the best predicted metric is enacted.
-                  Voting sets the goal; markets decide which action best reaches it. GovFi implements this
-                  directly: the metric is a collective's wellbeing index, the proposals are motions, and
-                  forecast markets estimate each motion's effect on that index.
-                </Step>
-                <Step n="2" title="Collectives">
-                  A collective is the group a motion applies to: a company, a community, a cohort, or the
-                  public. Each has one anonymous <B>wellbeing index</B> — a 0 to 100 aggregate of how its
-                  individuals feel — built up over time from a daily pulse, How are you feeling?, sent to
-                  everyone in the collective. No response is ever stored against a person.
-                </Step>
-                <Step n="3" title="Pulses">
+              <div>
+                <Eyebrow>what is moood govfi</Eyebrow>
+                <div className="mt-2 space-y-3 text-muted">
                   <p>
-                    A pulse is a check-in sent out from the moood app to a collective. The daily{" "}
-                    <B>How are you feeling?</B> is a pulse, and its responses feed the wellbeing index; a
-                    motion can also be dispatched as a pulse to gather sentiment on it.
+                    moood GovFi is a portal for governing with <B>futarchy</B>, a model proposed by the
+                    economist Robin Hanson. Futarchy separates a decision into two questions handled by two
+                    mechanisms. A collective first agrees on the metric that defines success. Prediction
+                    markets then forecast which proposal would move that metric the most, in place of a
+                    direct vote. In GovFi the metric is a collective's <B>wellbeing index</B>, an anonymous
+                    score from 0 to 100 of how its people feel, and each proposal, termed a motion, carries
+                    a forecast market that estimates its long-term effect on that index.
+                  </p>
+                  <p>
+                    moood is not a strict implementation of futarchy. In pure futarchy the market
+                    determines the outcome. GovFi instead combines the forecast market with{" "}
+                    <B>direct democracy</B>: each motion also records popular sentiment, the collective's
+                    current opinion of it, and the collective interprets both signals before implementing.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <Eyebrow>components</Eyebrow>
+                <Step n="1" title="Collectives">
+                  A collective is the group a motion applies to, such as a company, a community, a cohort,
+                  or the public. Each collective has one anonymous <B>wellbeing index</B>, an aggregate
+                  from 0 to 100 of how its individuals feel, built up over time from moood's{" "}
+                  <B>Baseline Signal</B>, which is available to everyone to participate in.
+                </Step>
+                <Step n="2" title="Pulses">
+                  A pulse is a poll that moood sends to the members of a collective, prompting each person
+                  to respond with their sentiment. Each pulse gathers one round of responses, and these are
+                  not limited to the moood app: any client can respond to pulses and submit them to a
+                  signal through moood's open <B>API</B>. See the API section for the endpoints.
+                </Step>
+                <Step n="3" title="Signals">
+                  <p>
+                    A signal is a collective's aggregated sentiment: an anonymous tally of positive and
+                    negative responses, built from one or more pulses collected over time. A signal can
+                    carry a motion, gathering sentiment on it.
                   </p>
                   <DailySignalCard />
                 </Step>
                 <Step n="4" title="Motions">
-                  A motion is a proposal or question put to a collective — a policy change, a spending
-                  decision, or an open question. Each person responds to it simply, with their sentiment:{" "}
-                  <B>positive</B> or <B>negative</B>. A motion can edit the collective's governing
-                  documents, or ask a question with no document change.
+                  <p>
+                    A motion is a proposal or question put to a collective, for example a policy change, a
+                    spending decision, or an open question. Each person responds with their sentiment,{" "}
+                    <B>positive</B> or <B>negative</B>.
+                  </p>
+                  <p>
+                    A motion can add a <B>git repository</B> of markdown documents and select the files to
+                    change within it. Each change is shown as a diff for review, as in a pull request, and
+                    git preserves every version, so the repository retains a complete and auditable
+                    history.
+                  </p>
                 </Step>
-                <Step n="5" title="Signals">
-                  A signal is the sentiment attached to a single motion or pulse: an anonymous aggregate
-                  of those positive and negative responses, i.e. how the collective feels about it. The
-                  signal is the container the rest of the model hangs on — a motion or pulse underneath,
-                  and optionally a market on top.
-                </Step>
-                <Step n="6" title="Markets">
-                  A market is an optional layer that attaches to a signal. It lets people stake on where
-                  the collective's wellbeing index will sit over time, across horizons from 1 to 30 years.
-                  For a motion, that forecast is the market's estimate of its long-term effect on
-                  wellbeing. A market is not itself a signal; it rides on one.
+                <Step n="5" title="Markets">
+                  <p>
+                    A market is an optional layer attached to a signal. Participants stake on where a
+                    collective's wellbeing index will sit over time, across horizons from 1 to 30 years, so
+                    for a signal carrying a motion or pulse, the market is a forecast of its long-term
+                    effect on that index.
+                  </p>
+                  <p>
+                    A single market has a blind spot. A motion can raise the proposing collective's index
+                    while lowering the wellbeing of people outside it, and a market on that index alone
+                    would never register the harm. This is the externality problem in strict futarchy: a
+                    collective is rewarded for gains it keeps and costs it exports. So alongside that{" "}
+                    <B>internal market</B>, each motion also carries an <B>external market</B> on the
+                    wellbeing index of the broader group it affects, such as the public. Weighted by the
+                    size of each group, the two together show whether a motion is a real improvement or a
+                    cost shifted onto outsiders.
+                  </p>
                 </Step>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
@@ -503,15 +516,6 @@ Authorization: Gateway gw_…:gs_…
               </p>
             </div>
           )}
-
-          <div className="rounded-lg p-5" style={{ background: "var(--color-surface-cream)" }}>
-            <Eyebrow>poc scope</Eyebrow>
-            <p className="mt-2 text-[13px] text-ink-2">
-              Local, mock-data POC. No blockchain, wallets, or tokens. See{" "}
-              <code className="font-mono">ARCHITECTURE.md</code> and{" "}
-              <code className="font-mono">PRIVACY.md</code>.
-            </p>
-          </div>
         </div>
       </div>
     </div>

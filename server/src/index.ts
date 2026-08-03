@@ -150,16 +150,19 @@ app.post("/api/motions", (req, res) => {
   };
   db.proposals.set(id, proposal);
 
-  for (const { key, years } of HORIZONS) {
-    const mid = nextId("mkt");
-    db.markets.set(mid, {
-      id: mid,
-      proposalId: id,
-      horizon: key,
-      years,
-      lmsr: { b: 100, qYes: 0, qNo: 0 },
-      history: [{ t: 0, yes: 0.5 }],
-    });
+  for (const scope of ["internal", "external"] as const) {
+    for (const { key, years } of HORIZONS) {
+      const mid = nextId("mkt");
+      db.markets.set(mid, {
+        id: mid,
+        proposalId: id,
+        scope,
+        horizon: key,
+        years,
+        lmsr: { b: 100, qYes: 0, qNo: 0 },
+        history: [{ t: 0, yes: 0.5 }],
+      });
+    }
   }
 
   ok(res, proposalDetail(proposal));
@@ -198,16 +201,19 @@ app.put("/api/motions/:id", (req, res) => {
     p.tradingEnabled = tradingEnabled;
     if (tradingEnabled) {
       if (marketsForProposal(p.id).length === 0) {
-        for (const { key, years } of HORIZONS) {
-          const mid = nextId("mkt");
-          db.markets.set(mid, {
-            id: mid,
-            proposalId: p.id,
-            horizon: key,
-            years,
-            lmsr: { b: 100, qYes: 0, qNo: 0 },
-            history: [{ t: 0, yes: 0.5 }],
-          });
+        for (const scope of ["internal", "external"] as const) {
+          for (const { key, years } of HORIZONS) {
+            const mid = nextId("mkt");
+            db.markets.set(mid, {
+              id: mid,
+              proposalId: p.id,
+              scope,
+              horizon: key,
+              years,
+              lmsr: { b: 100, qYes: 0, qNo: 0 },
+              history: [{ t: 0, yes: 0.5 }],
+            });
+          }
         }
       }
     } else {

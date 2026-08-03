@@ -241,7 +241,9 @@ export function Dashboard() {
                       )}
                       <Pill tone={p.status === "open" ? "green" : "grey"}>{p.status}</Pill>
                       <SourceBadge source={p.source} />
-                      {p.owner && <Pill tone="grey">owned by {p.owner}</Pill>}
+                      {p.owner && group?.name === "Public" && (
+                        <Pill tone="grey">{p.owner}</Pill>
+                      )}
                     </div>
                     <div className="mt-2 flex items-center gap-2 flex-wrap">
                       <h3 className="font-heading text-[17px] font-semibold">{p.title}</h3>

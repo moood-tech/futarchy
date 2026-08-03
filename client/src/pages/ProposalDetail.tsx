@@ -81,6 +81,9 @@ export function ProposalDetail() {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   // Accordion: exactly one horizon's market card is open at a time.
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Which of the two markets is shown: the collective's own index (internal) or
+  // the wider public's (external). See the externality note in How It Works.
+  const [marketTab, setMarketTab] = useState<"internal" | "external">("internal");
 
   const refresh = useCallback(() => {
     if (!id) return;
@@ -92,14 +95,19 @@ export function ProposalDetail() {
     refresh();
   }, [refresh]);
 
-  // Default the accordion to the first (shortest) horizon once loaded.
+  // Default the accordion to the first (shortest) horizon of the selected
+  // market, and re-open it when switching between internal and external.
   useEffect(() => {
-    if (proposal && expandedId === null && proposal.markets.length) {
-      setExpandedId(proposal.markets[0].id);
+    if (!proposal) return;
+    const visible = proposal.markets.filter((m) => m.scope === marketTab);
+    if (visible.length && !visible.some((m) => m.id === expandedId)) {
+      setExpandedId(visible[0].id);
     }
-  }, [proposal, expandedId]);
+  }, [proposal, marketTab, expandedId]);
 
   if (!proposal) return <div className="text-muted">Loading…</div>;
+
+  const visibleMarkets = proposal.markets.filter((m) => m.scope === marketTab);
 
   return (
     <div className="space-y-6">
@@ -141,16 +149,35 @@ export function ProposalDetail() {
         {/* LEFT — predicted wellbeing (futarchy-style forecast market) */}
         {proposal.tradingEnabled && (
         <Card className="p-5">
-          <div className="flex items-center gap-1.5">
-            <Eyebrow>predicted wellbeing</Eyebrow>
-            <InfoTip text="Prices are LMSR-implied probabilities." />
+          <div className="flex items-start justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <Eyebrow>markets</Eyebrow>
+              <InfoTip text="Prices are LMSR-implied probabilities." />
+            </div>
+            <div className="segmented">
+              {(["internal", "external"] as const).map((t) => (
+                <button key={t} className="seg" data-active={marketTab === t} onClick={() => setMarketTab(t)}>
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
-          <p className="mt-1 mb-4 text-[13px] text-muted">
-            Forecasts whether the collective's <strong className="text-ink font-semibold">wellbeing index</strong>{" "}
-            will be higher <em>under this motion</em> than the status quo, at each horizon.
+          <p className="mt-2 mb-4 text-[13px] text-muted">
+            {marketTab === "internal" ? (
+              <>
+                Forecasts whether <strong className="text-ink font-semibold">this collective's</strong>{" "}
+                wellbeing index will be higher under this motion than the status quo, at each horizon.
+              </>
+            ) : (
+              <>
+                Forecasts the motion's effect on the{" "}
+                <strong className="text-ink font-semibold">wider public's</strong> wellbeing index, at each
+                horizon.
+              </>
+            )}
           </p>
           <div className="space-y-2">
-            {proposal.markets.map((m) =>
+            {visibleMarkets.map((m) =>
               m.id === expandedId ? (
                 <MarketCard
                   key={m.id}

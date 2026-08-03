@@ -137,7 +137,9 @@ export function Signals() {
                         {groupName(p.groupId)}
                       </Pill>
                     )}
-                    {p.owner && <Pill tone="grey">owned by {p.owner}</Pill>}
+                    {p.owner && groupName(p.groupId) === "Public" && (
+                      <Pill tone="grey">{p.owner}</Pill>
+                    )}
                   </div>
                   <div className="mt-3 flex items-center gap-2 flex-wrap">
                     <h3 className="font-heading text-[18px] font-semibold leading-snug">
@@ -145,27 +147,24 @@ export function Signals() {
                     </h3>
                     {p.naked && <Pill tone="red">Baseline Signal</Pill>}
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-4">
-                    {p.tradingEnabled ? (
+                  {p.tradingEnabled ? (
+                    <div className="mt-4 grid grid-cols-2 gap-4">
                       <SignalRow label="predicted (1y)" value={p.marketLean} hint="P(wellbeing up)" />
-                    ) : (
-                      <div className="opacity-40">
-                        <div className="flex items-center justify-between font-mono text-[11px] text-muted">
-                          <span>predicted (1y)</span>
-                          <span>00%</span>
-                        </div>
-                        <div className="mt-1">
-                          <SplitBar left={0} leftColor="var(--color-text-quiet)" rightColor="var(--color-brand-hairline)" />
-                        </div>
-                        <div className="mt-1 font-mono text-[10px] text-quiet">P(wellbeing up)</div>
-                      </div>
-                    )}
-                    <SignalRow
-                      label="sentiment now"
-                      value={p.sentimentPositive}
-                      hint={`${p.pulse.positive + p.pulse.negative} responses`}
-                    />
-                  </div>
+                      <SignalRow
+                        label="sentiment now"
+                        value={p.sentimentPositive}
+                        hint={`${p.pulse.positive + p.pulse.negative} responses`}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-4">
+                      <SignalRow
+                        label="sentiment now"
+                        value={p.sentimentPositive}
+                        hint={`${p.pulse.positive + p.pulse.negative} responses`}
+                      />
+                    </div>
+                  )}
                 </Card>
               </Link>
             ))}

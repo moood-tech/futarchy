@@ -40,6 +40,7 @@ export interface IndexResponse {
 
 export interface MarketView {
   id: string;
+  scope: "internal" | "external";
   horizon: Horizon;
   years: number;
   baselineRate: number;
