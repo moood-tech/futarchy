@@ -88,7 +88,8 @@ app.post("/api/contribute", (req: Request, res: Response) => {
 app.get("/api/index/:groupId", (req, res) => {
   const { groupId } = req.params;
   if (!db.groups.has(groupId)) return bad(res, 404, "unknown group");
-  const threshold = req.query.threshold === "verified" ? "verified" : "none";
+  const q = req.query.threshold;
+  const threshold = q === "verified" ? "verified" : q === "unverified" ? "unverified" : "weighted";
   const series = db.index.get(groupId) ?? [];
   const stats = statsFor(groupId);
   ok(res, {

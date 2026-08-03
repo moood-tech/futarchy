@@ -96,9 +96,9 @@ export function groupSummary(groupId: string) {
   const series = db.index.get(groupId) ?? [];
   const cur = current(groupId);
 
-  // 30d trend ≈ compare against the point ~4 weeks back.
+  // 30d trend ≈ compare against the point ~4 weeks back (weighted index).
   const back = series[Math.max(0, series.length - 5)];
-  const trend30d = back ? cur.indexNone - back.indexNone : 0;
+  const trend30d = back ? cur.indexWeighted - back.indexWeighted : 0;
 
   // Count governance proposals only — the moood daily check-in is a sentiment
   // signal, not a proposal, so it is excluded from the open-proposal count.
@@ -133,8 +133,9 @@ export function groupSummary(groupId: string) {
     derived: !!group.derived,
     childrenIds: group.childrenIds ?? [],
     documents: (group.documents ?? []).map((d) => ({ id: d.id, name: d.name, path: d.path })),
-    currentIndexNone: Math.round(cur.indexNone * 10) / 10,
+    currentIndexUnverified: Math.round(cur.indexUnverified * 10) / 10,
     currentIndexVerified: Math.round(cur.indexVerified * 10) / 10,
+    currentIndexWeighted: Math.round(cur.indexWeighted * 10) / 10,
     trend30d: Math.round(trend30d * 10) / 10,
     openProposals,
     totalResponses: stats.allCount,
